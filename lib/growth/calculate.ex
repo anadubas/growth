@@ -20,27 +20,23 @@ defmodule Growth.Calculate do
   end
 
   @spec results(Measure.t(), Child.t()) :: Measure.t()
-  def results(
-        %{
-          age_in_months: age_in_months,
-          weight: weight,
-          height: height,
-          head_circumference: head_circumference,
-          bmi: bmi,
-          gender: gender
-        } = growth
-      ) do
+  def results(%Measure{} = measure, %Child{} = child) do
     weight_result =
-      calculate_result(age_in_months, weight, :weight, gender)
+      calculate_result(child.age_in_months, measure.weight, :weight, child.gender)
 
     height_result =
-      calculate_result(age_in_months, height, :height, gender)
+      calculate_result(child.age_in_months, measure.height, :height, child.gender)
 
     bmi_result =
-      calculate_result(age_in_months, bmi, :bmi, gender)
+      calculate_result(child.age_in_months, measure.bmi, :bmi, child.gender)
 
     head_circumference_result =
-      calculate_result(age_in_months, head_circumference, :head_circumference, gender)
+      calculate_result(
+        child.age_in_months,
+        measure.head_circumference,
+        :head_circumference,
+        child.gender
+      )
 
     result = %{
       weight_result: weight_result,
@@ -49,7 +45,7 @@ defmodule Growth.Calculate do
       bmi_result: bmi_result
     }
 
-    %{growth | results: result}
+    %{measure | results: result}
   end
 
   @spec calculate_result(number(), number(), atom(), atom()) :: map() | String.t()
