@@ -6,12 +6,12 @@ defmodule Growth.Child do
   alias Growth.Calculate
 
   @type t :: %__MODULE__{
-    name: String.t(),
-    gender: String.t(),
-    birthday: Date.t(),
-    measure_date: Date.t(),
-    age_in_months: number()
-  }
+          name: String.t(),
+          gender: String.t(),
+          birthday: Date.t(),
+          measure_date: Date.t(),
+          age_in_months: number()
+        }
 
   @enforce_keys [:name, :gender, :birthday]
 
@@ -23,7 +23,7 @@ defmodule Growth.Child do
     :age_in_months
   ]
 
-  @doc"""
+  @doc """
   Create child
   """
   @spec new(map()) :: {:ok, t()} | {:error, term()}
@@ -47,7 +47,7 @@ defmodule Growth.Child do
   end
 
   defp add_age_in_months(%__MODULE__{birthday: birthday, measure_date: measure_date} = child)
-    when not is_nil(birthday) and not is_nil(measure_date) do
+       when not is_nil(birthday) and not is_nil(measure_date) do
     {:ok, %{child | age_in_months: Calculate.age_in_months(birthday, measure_date)}}
   end
 end

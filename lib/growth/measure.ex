@@ -7,12 +7,12 @@ defmodule Growth.Measure do
   alias Growth.Calculate
 
   @type t :: %__MODULE__{
-    height: number(),
-    weight: number(),
-    head_circumference:  number(),
-    bmi: number(),
-    results: map()
-  }
+          height: number(),
+          weight: number(),
+          head_circumference: number(),
+          bmi: number(),
+          results: map()
+        }
 
   defstruct [
     :weight,
@@ -22,7 +22,7 @@ defmodule Growth.Measure do
     results: %{}
   ]
 
-  @doc"""
+  @doc """
   Create a measure result for a child
   """
   @spec new(map(), Child.t()) :: {:ok, t()} | {:error, term()}
@@ -42,11 +42,13 @@ defmodule Growth.Measure do
   end
 
   defp add_bmi(%__MODULE__{weight: weight, height: height} = growth)
-    when is_number(weight) and is_number(height) do
-    %{growth | bmi: Calculate.imc(weight, height)}
+       when is_number(weight) and is_number(height) do
+    %{growth | bmi: Calculate.bmi(weight, height)}
   end
 
-  defp add_bmi(%__MODULE__{} = growth), do: %{growth | bmi: "no measure"}
+  defp add_bmi(%__MODULE__{} = growth) do
+    %{growth | bmi: "no measure"}
+  end
 
   defp add_results(%__MODULE__{} = growth, %Child{} = child) do
     {:ok, %{growth | results: Calculate.results(growth, child)}}
