@@ -77,15 +77,13 @@ defmodule Growth.Calculate do
   defp add_zscore(%{l: l, m: m, s: s} = data, measure) do
     zscore = Zscore.calculate(measure, l, m, s)
 
-    data
-    |> Map.put(:zscore, zscore)
+    Map.put(data, :zscore, zscore)
   end
 
   defp add_percentile(%{zscore: zscore} = data) do
     percentile = Float.round(0.5 * (:math.erf(zscore / :math.sqrt(2)) + 1), 2)
 
-    data
-    |> Map.put(:percentile, percentile)
+    Map.put(data, :percentile, percentile)
   end
 
   defp format_result(data) do
