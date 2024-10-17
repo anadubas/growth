@@ -20,7 +20,7 @@ defmodule GrowthWeb.ResultsComponent do
         </div>
 
         <div class="mb-2">
-          <strong>IMC Percentil:</strong> <%= @measure.results.imc_result.percentile %>%
+          <strong><abbr title="Índice de massa corporal">IMC</abbr> Percentil:</strong> <%= @measure.results.bmi_result.percentile %>%
         </div>
       </div>
       """

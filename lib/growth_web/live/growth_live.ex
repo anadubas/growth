@@ -16,7 +16,11 @@ defmodule GrowthWeb.GrowthLive do
 
   @impl true
   def handle_event("save_child", %{"child" => child_params}, socket) do
-    case Child.new(child_params) do
+    child_params
+    |> map_keys_to_atom()
+    |> child_transforms()
+    |> Growth.create_child()
+    |> case do
       {:ok, child} ->
         {:noreply, assign(socket, child: child, step: :measure_info)}
 
@@ -27,7 +31,11 @@ defmodule GrowthWeb.GrowthLive do
 
   @impl true
   def handle_event("save_measure", %{"measure" => measure_params}, socket) do
-    case Measure.new(measure_params, socket.assigns.child) do
+    measure_params
+    |> map_keys_to_atom()
+    |> measure_transforms()
+    |> Growth.child_measure(socket.assigns.child)
+    |> case do
       {:ok, measure} ->
         {:noreply, assign(socket, measure: measure, step: :results)}
 
@@ -45,5 +53,31 @@ defmodule GrowthWeb.GrowthLive do
     }
 
     {:noreply, assign(socket, child: default_child, measure: %Measure{}, step: :child_info)}
+  end
+
+  def map_keys_to_atom(attrs) do
+    # NOTE: (jpd) this is kind of a risk, because one can exploit it and exhaust all atoms
+    Enum.into(attrs, %{}, fn {key, value} -> {String.to_atom(key), value} end)
+  end
+
+  def child_transforms(attrs) do
+    Enum.into(attrs, %{}, fn
+      {:birthday, value} ->
+        {:birthday, Date.from_iso8601!(value)}
+
+      {key, value} ->
+        {key, value}
+    end)
+  end
+
+  def measure_transforms(attrs) do
+    Enum.into(attrs, %{}, fn {key, value} ->
+      with {converted_value, _} <- Float.parse(value) do
+        {key, converted_value}
+      else
+        _ ->
+          {key, nil}
+      end
+    end)
   end
 end

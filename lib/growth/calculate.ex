@@ -1,5 +1,7 @@
 defmodule Growth.Calculate do
+  alias Growth.Child
   alias Growth.LoadReference
+  alias Growth.Measure
   alias Growth.Zscore
 
   @days_in_month 30.4375
@@ -12,56 +14,22 @@ defmodule Growth.Calculate do
     |> floor()
   end
 
-  @spec imc(number(), number()) :: number()
-  def imc(weight, height) do
+  @spec bmi(number(), number()) :: number()
+  def bmi(weight, height) do
     weight / :math.pow(height / 100.0, 2)
   end
 
-  @spec results(map(), map()) :: map()
+  @spec results(Measure.t(), Child.t()) :: Measure.t()
   def results(
-        %{
-          weight: weight,
-          height: height,
-          head_circumference: head_circumference,
-          imc: "no measure"
-        } = growth,
-        %{gender: gender, age_in_months: age_in_months}
-      ) do
-    weight_result =
-      calculate_result(age_in_months, weight, :weight, gender)
-
-    height_result =
-      calculate_result(age_in_months, height, :height, gender)
-
-    imc_result = "no results"
-
-    head_circumference_result =
-      calculate_result(age_in_months, head_circumference, :head_circumference, gender)
-
-    result = %{
-      weight_result: weight_result,
-      height_result: height_result,
-      head_circumference_result: head_circumference_result,
-      imc_result: imc_result
-    }
-
-    %{growth | results: result}
-  end
-
-  @spec results(map(), map()) :: map()
-  def results(
-        %{weight: weight, height: height, head_circumference: head_circumference, imc: imc} =
+        %Measure{weight: weight, height: height, head_circumference: head_circumference, bmi: bmi} =
           growth,
-        %{gender: gender, age_in_months: age_in_months}
+        %Child{gender: gender, age_in_months: age_in_months}
       ) do
-    weight_result =
-      calculate_result(age_in_months, weight, :weight, gender)
+    weight_result = calculate_result(age_in_months, weight, :weight, gender)
 
-    height_result =
-      calculate_result(age_in_months, height, :height, gender)
+    height_result = calculate_result(age_in_months, height, :height, gender)
 
-    imc_result =
-      calculate_result(age_in_months, imc, :imc, gender)
+    bmi_result = calculate_result(age_in_months, bmi, :bmi, gender)
 
     head_circumference_result =
       calculate_result(age_in_months, head_circumference, :head_circumference, gender)
@@ -70,49 +38,45 @@ defmodule Growth.Calculate do
       weight_result: weight_result,
       height_result: height_result,
       head_circumference_result: head_circumference_result,
-      imc_result: imc_result
+      bmi_result: bmi_result
     }
 
     %{growth | results: result}
   end
 
-  @spec calculate_result(number(), number(), atom(), atom()) ::
-          {:ok, float} | {:error, String.t()}
-  def calculate_result(age_in_months, measure, data_type, gender) do
+  @spec calculate_result(number(), number() | String.t(), atom(), atom()) :: number() | String.t()
+  def calculate_result(age_in_months, measure, data_type, gender) when is_number(measure) do
     case LoadReference.load_data(data_type) do
       {:ok, data} ->
         data
         |> find_row(age_in_months, gender)
         |> add_zscore(measure)
-        |> add_percentile
-        |> format_result
+        |> add_percentile()
+        |> format_result()
 
       {:error, _cause} ->
         "no data found"
     end
   end
 
+  def calculate_result(_age_in_months, _measure, _data_type, _gender) do
+    "no results"
+  end
+
   defp find_row(data, age_in_months, gender) do
-    data
-    |> Enum.find(fn row ->
-      row.age == age_in_months &&
-        row.age_unit == "month" &&
-        row.gender == gender
-    end)
+    Enum.find(data, &(&1.age == age_in_months && &1.age_unit == "month" && &1.gender == gender))
   end
 
   defp add_zscore(%{l: l, m: m, s: s} = data, measure) do
     zscore = Zscore.calculate(measure, l, m, s)
 
-    data
-    |> Map.put(:zscore, zscore)
+    Map.put(data, :zscore, zscore)
   end
 
   defp add_percentile(%{zscore: zscore} = data) do
     percentile = Float.round(0.5 * (:math.erf(zscore / :math.sqrt(2)) + 1), 2)
 
-    data
-    |> Map.put(:percentile, percentile)
+    Map.put(data, :percentile, percentile * 100.0)
   end
 
   defp format_result(data) do

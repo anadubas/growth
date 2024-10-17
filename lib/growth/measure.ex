@@ -3,13 +3,14 @@ defmodule Growth.Measure do
   The child measures info struct
   """
 
+  alias Growth.Child
   alias Growth.Calculate
 
   @type t :: %__MODULE__{
           height: number(),
           weight: number(),
           head_circumference: number(),
-          imc: number(),
+          bmi: number(),
           results: map()
         }
 
@@ -17,43 +18,39 @@ defmodule Growth.Measure do
     :weight,
     :height,
     :head_circumference,
-    :imc,
+    :bmi,
     results: %{}
   ]
 
   @doc """
   Create a measure result for a child
   """
-  @spec new(map(), map()) :: {:ok, t()} | {:error, term()}
+  @spec new(map(), Child.t()) :: {:ok, t()} | {:error, term()}
   def new(attrs, child) do
     attrs
     |> create_struct()
-    |> add_imc()
+    |> add_bmi()
     |> add_results(child)
   end
 
   defp create_struct(attrs) do
     %__MODULE__{
-      height: parse_float(attrs["height"]),
-      weight: parse_float(attrs["weight"]),
-      head_circumference: parse_float(attrs["head_circumference"])
+      height: attrs.height,
+      weight: attrs.weight,
+      head_circumference: attrs.head_circumference
     }
   end
 
-  defp add_imc(%__MODULE__{weight: weight, height: height} = growth)
+  defp add_bmi(%__MODULE__{weight: weight, height: height} = growth)
        when is_number(weight) and is_number(height) do
-    %{growth | imc: Calculate.imc(weight, height)}
+    %{growth | bmi: Calculate.bmi(weight, height)}
   end
 
-  defp add_imc(growth), do: %{growth | imc: "no measure"}
-
-  defp add_results(growth, child) do
-    {:ok, %{growth | results: Calculate.results(growth, child)}}
+  defp add_bmi(%__MODULE__{} = growth) do
+    %{growth | bmi: "no measure"}
   end
 
-  defp parse_float(value) when is_binary(value) do
-    {float, _} = Float.parse(value)
-
-    float
+  defp add_results(%__MODULE__{} = growth, %Child{} = child) do
+    {:ok, Calculate.results(growth, child)}
   end
 end
