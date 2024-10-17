@@ -35,9 +35,9 @@ defmodule Growth.Measure do
 
   defp create_struct(attrs) do
     %__MODULE__{
-      height: parse_float(attrs["height"]),
-      weight: parse_float(attrs["weight"]),
-      head_circumference: parse_float(attrs["head_circumference"])
+      height: attrs.height,
+      weight: attrs.weight,
+      head_circumference: attrs.head_circumference
     }
   end
 
@@ -52,11 +52,5 @@ defmodule Growth.Measure do
 
   defp add_results(%__MODULE__{} = growth, %Child{} = child) do
     {:ok, %{growth | results: Calculate.results(growth, child)}}
-  end
-
-  defp parse_float(value) when is_binary(value) do
-    {float, _} = Float.parse(value)
-
-    float
   end
 end

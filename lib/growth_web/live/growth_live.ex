@@ -33,6 +33,7 @@ defmodule GrowthWeb.GrowthLive do
   def handle_event("save_measure", %{"measure" => measure_params}, socket) do
     measure_params
     |> map_keys_to_atom()
+    |> measure_transforms()
     |> Growth.child_measure(socket.assigns.child)
     |> case do
       {:ok, measure} ->
@@ -66,6 +67,17 @@ defmodule GrowthWeb.GrowthLive do
 
       {key, value} ->
         {key, value}
+    end)
+  end
+
+  def measure_transforms(attrs) do
+    Enum.into(attrs, %{}, fn {key, value} ->
+      with {converted_value, _} <- Float.parse(value) do
+        {key, converted_value}
+      else
+        _ ->
+          {key, nil}
+      end
     end)
   end
 end
