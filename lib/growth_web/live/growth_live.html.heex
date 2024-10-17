@@ -4,19 +4,19 @@
   <div class="card bg-white shadow-md rounded-lg p-6">
     <form phx-submit="base_info" class="form-control">
       <label class="input input-bordered input-primary flex items-center gap-2 m-1">
-        Nome <input type="text" name="growth[name]" class="grow" placeholder="Maria" />
+        Nome <input type="text" name="child[name]" class="grow" placeholder="Maria" />
       </label>
 
       <label class="input input-bordered input-primary flex items-center gap-2 m-1">
         Nascimento
-        <input type="date" name="growth[birthday]" class="grow" placeholder="daisy@site.com" />
+        <input type="date" name="child[birthday]" class="grow" placeholder="daisy@site.com" />
       </label>
 
       <label class="form-control w-full max-w-xs">
         <div class="label">
           <span class="label-text">Sexo</span>
         </div>
-        <select class="select select-bordered select-primary">
+        <select name="child[gender]" class="select select-bordered select-primary">
           <option value="female">Menina</option>
           <option value="male">Menino</option>
         </select>
