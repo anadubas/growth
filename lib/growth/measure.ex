@@ -10,7 +10,7 @@ defmodule Growth.Measure do
     height: number(),
     weight: number(),
     head_circumference:  number(),
-    imc: number(),
+    bmi: number(),
     results: map()
   }
 
@@ -18,7 +18,7 @@ defmodule Growth.Measure do
     :weight,
     :height,
     :head_circumference,
-    :imc,
+    :bmi,
     results: %{}
   ]
 
@@ -29,7 +29,7 @@ defmodule Growth.Measure do
   def new(attrs, child) do
     attrs
     |> create_struct()
-    |> add_imc()
+    |> add_bmi()
     |> add_results(child)
   end
 
@@ -41,12 +41,12 @@ defmodule Growth.Measure do
     }
   end
 
-  defp add_imc(%__MODULE__{weight: weight, height: height} = growth)
+  defp add_bmi(%__MODULE__{weight: weight, height: height} = growth)
     when is_number(weight) and is_number(height) do
-    %{growth | imc: Calculate.imc(weight, height)}
+    %{growth | bmi: Calculate.imc(weight, height)}
   end
 
-  defp add_imc(%__MODULE__{} = growth), do: %{growth | imc: "no measure"}
+  defp add_bmi(%__MODULE__{} = growth), do: %{growth | bmi: "no measure"}
 
   defp add_results(%__MODULE__{} = growth, %Child{} = child) do
     {:ok, %{growth | results: Calculate.results(growth, child)}}
