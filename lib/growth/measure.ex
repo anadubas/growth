@@ -3,6 +3,7 @@ defmodule Growth.Measure do
   The child measures info struct
   """
 
+  alias Growth.Child
   alias Growth.Calculate
 
   @type t :: %__MODULE__{
@@ -24,7 +25,7 @@ defmodule Growth.Measure do
   @doc"""
   Create a measure result for a child
   """
-  @spec new(map(), map()) :: {:ok, t()} | {:error, term()}
+  @spec new(map(), Child.t()) :: {:ok, t()} | {:error, term()}
   def new(attrs, child) do
     attrs
     |> create_struct()
@@ -45,9 +46,9 @@ defmodule Growth.Measure do
     %{growth | imc: Calculate.imc(weight, height)}
   end
 
-  defp add_imc(growth), do: %{growth | imc: "no measure"}
+  defp add_imc(%__MODULE__{} = growth), do: %{growth | imc: "no measure"}
 
-  defp add_results(growth, child) do
+  defp add_results(%__MODULE__{} = growth, %Child{} = child) do
     {:ok, %{growth | results: Calculate.results(growth, child)}}
   end
 end

@@ -1,5 +1,7 @@
 defmodule Growth.Calculate do
+  alias Growth.Child
   alias Growth.LoadReference
+  alias Growth.Measure
   alias Growth.Zscore
 
   @days_in_month 30.4375
@@ -17,7 +19,7 @@ defmodule Growth.Calculate do
     weight / :math.pow(height / 100.0, 2)
   end
 
-  @spec results(map()) :: map()
+  @spec results(Measure.t(), Child.t()) :: Measure.t()
   def results(
         %{
           age_in_months: age_in_months,
