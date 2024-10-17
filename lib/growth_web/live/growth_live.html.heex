@@ -3,14 +3,18 @@
 
   <div class="card bg-white shadow-md rounded-lg p-6">
     <form phx-submit="base_info" class="form-control">
-      <label class="input input-bordered input-primary flex items-center gap-2 m-1">
-        Nome
-        <input type="text" name="growth[name]" class="grow" placeholder="Maria" />
+      <label class="form-control w-full max-w-xs">
+        <div class="label">
+          <span class="label-text">Nome</span>
+        </div>
+        <input type="text" name="growth[name]" class="input input-bordered" placeholder="Maria" />
       </label>
 
-      <label class="input input-bordered input-primary flex items-center gap-2 m-1">
-        Nascimento
-        <input type="date" name="growth[birthday]" class="grow" placeholder="daisy@site.com" />
+      <label class="form-control w-full max-w-xs">
+        <div class="label">
+          <span class="label-text">Data de nascimento</span>
+        </div>
+        <input type="date" name="growth[birthday]" class="input input-bordered" placeholder="daisy@site.com" />
       </label>
 
       <label class="form-control w-full max-w-xs">
@@ -22,7 +26,6 @@
           <option value="male">Menino</option>
         </select>
       </label>
-
 
       <div class="text-center mt-4">
         <button type="submit" class="btn btn-primary">Calcular</button>
