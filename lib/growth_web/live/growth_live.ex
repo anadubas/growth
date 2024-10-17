@@ -5,16 +5,26 @@ defmodule GrowthWeb.GrowthLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, growth: %{}, loading: false)}
+    {:ok, assign(socket, child: %{}, loading: false)}
   end
 
   @impl true
-  def handle_event("base_info", %{"growth" => growth_params}, socket) do
-    case Growth.new(growth_params) do
-      {:ok, growth} ->
-        {:noreply, assign(socket, growth: growth, loading: false)}
+  def handle_event("base_info", %{"child" => child_params}, socket) do
+    case Growth.create_child(child_params) do
+      {:ok, child} ->
+        {:noreply, assign(socket, child: child, loading: false)}
       {:error, _reason} ->
         {:noreply, assign(socket, loading: false)}
+    end
+  end
+
+  @impl true
+  def handle_event("measure_info", %{"child" => child, "measure" => measure_params}, socket) do
+    case Growth.child_measure(measure_params, child) do
+      {:ok, measure} ->
+        {:noreply, assign(socket, %{child: child, measure: measure}, loading: false)}
+      {:error, _reason} ->
+        {:noreply, assign(socket, child: child, loading: false)}
     end
   end
 end
