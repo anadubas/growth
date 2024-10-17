@@ -42,8 +42,9 @@ defmodule GrowthWeb do
         formats: [:html, :json],
         layouts: [html: GrowthWeb.Layouts]
 
+      use Gettext, backend: GrowthWeb.Gettext
+
       import Plug.Conn
-      import GrowthWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -81,11 +82,11 @@ defmodule GrowthWeb do
 
   defp html_helpers do
     quote do
+      use Gettext, backend: GrowthWe
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components and translation
       import GrowthWeb.CoreComponents
-      import GrowthWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
