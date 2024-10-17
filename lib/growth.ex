@@ -39,7 +39,7 @@ defmodule Growth do
   @doc"""
   Create a measure result for a child
   """
-  @spec new(map()) :: t()
+  @spec new(map()) :: {:ok, t()} | {:error, term()}
   def new(attrs) do
     attrs
     |> create_struct()

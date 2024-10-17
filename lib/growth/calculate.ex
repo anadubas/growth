@@ -49,7 +49,7 @@ defmodule Growth.Calculate do
     %{growth | results: result}
   end
 
-  @spec calculate_result(number(), number(), atom(), atom()) :: {:ok, float} | {:error, String.t()}
+  @spec calculate_result(number(), number(), atom(), atom()) :: map() | String.t()
   def calculate_result(age_in_months, measure, data_type, gender) do
     case LoadReference.load_data(data_type) do
       {:ok, data} ->
