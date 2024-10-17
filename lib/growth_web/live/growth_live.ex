@@ -13,6 +13,7 @@ defmodule GrowthWeb.GrowthLive do
     case Growth.new(growth_params) do
       {:ok, growth} ->
         {:noreply, assign(socket, growth: growth, loading: false)}
+
       {:error, _reason} ->
         {:noreply, assign(socket, loading: false)}
     end

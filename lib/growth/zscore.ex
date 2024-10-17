@@ -1,5 +1,4 @@
 defmodule Growth.Zscore do
-
   @spec calculate(number(), number(), number(), number()) :: number()
   def calculate(measure, l, m, s) do
     measure

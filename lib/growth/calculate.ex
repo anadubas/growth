@@ -1,5 +1,4 @@
 defmodule Growth.Calculate do
-
   alias Growth.LoadReference
   alias Growth.Zscore
 
@@ -15,18 +14,20 @@ defmodule Growth.Calculate do
 
   @spec bmi(number(), number()) :: number()
   def bmi(weight, height) do
-    weight/ :math.pow(height / 100.0, 2)
+    weight / :math.pow(height / 100.0, 2)
   end
 
   @spec results(map()) :: map()
-  def results(%{
-        age_in_months: age_in_months,
-        weight: weight,
-        height: height,
-        head_circumference: head_circumference,
-        bmi: bmi,
-        gender: gender
-      } = growth) do
+  def results(
+        %{
+          age_in_months: age_in_months,
+          weight: weight,
+          height: height,
+          head_circumference: head_circumference,
+          bmi: bmi,
+          gender: gender
+        } = growth
+      ) do
     weight_result =
       calculate_result(age_in_months, weight, :weight, gender)
 
@@ -56,19 +57,20 @@ defmodule Growth.Calculate do
         data
         |> find_row(age_in_months, gender)
         |> add_zscore(measure)
-        |> add_percentile
-        |> format_result
+        |> add_percentile()
+        |> format_result()
 
-      {:error, _cause} -> "no data found"
+      {:error, _cause} ->
+        "no data found"
     end
   end
 
   defp find_row(data, age_in_months, gender) do
     data
     |> Enum.find(fn row ->
-      row.age == age_in_months
-      && row.age_unit == "month"
-      && row.gender == gender
+      row.age == age_in_months &&
+        row.age_unit == "month" &&
+        row.gender == gender
     end)
   end
 
