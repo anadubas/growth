@@ -6,12 +6,12 @@ defmodule Growth.Measure do
   alias Growth.Calculate
 
   @type t :: %__MODULE__{
-    height: number(),
-    weight: number(),
-    head_circumference:  number(),
-    imc: number(),
-    results: map()
-  }
+          height: number(),
+          weight: number(),
+          head_circumference: number(),
+          imc: number(),
+          results: map()
+        }
 
   defstruct [
     :weight,
@@ -21,7 +21,7 @@ defmodule Growth.Measure do
     results: %{}
   ]
 
-  @doc"""
+  @doc """
   Create a measure result for a child
   """
   @spec new(map(), map()) :: {:ok, t()} | {:error, term()}
@@ -34,14 +34,14 @@ defmodule Growth.Measure do
 
   defp create_struct(attrs) do
     %__MODULE__{
-      height: attrs.height,
-      weight: attrs.weight,
-      head_circumference: attrs.head_circumference
+      height: parse_float(attrs["height"]),
+      weight: parse_float(attrs["weight"]),
+      head_circumference: parse_float(attrs["head_circumference"])
     }
   end
 
   defp add_imc(%__MODULE__{weight: weight, height: height} = growth)
-    when is_number(weight) and is_number(height) do
+       when is_number(weight) and is_number(height) do
     %{growth | imc: Calculate.imc(weight, height)}
   end
 
@@ -49,5 +49,11 @@ defmodule Growth.Measure do
 
   defp add_results(growth, child) do
     {:ok, %{growth | results: Calculate.results(growth, child)}}
+  end
+
+  defp parse_float(value) when is_binary(value) do
+    {float, _} = Float.parse(value)
+
+    float
   end
 end

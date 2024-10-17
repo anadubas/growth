@@ -10,7 +10,7 @@ defmodule Growth do
   alias Growth.Child
   alias Growth.Measure
 
-  @doc"""
+  @doc """
   Create a child
   """
   @spec create_child(map()) :: {:ok, %Child{}} | {:error, term()}
@@ -19,7 +19,7 @@ defmodule Growth do
     |> Child.new()
   end
 
-  @doc"""
+  @doc """
   Create child measures results
   """
   @spec child_measure(map(), %Child{}) :: {:ok, %Measure{}} | {:error, term()}

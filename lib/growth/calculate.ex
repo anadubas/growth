@@ -1,5 +1,4 @@
 defmodule Growth.Calculate do
-
   alias Growth.LoadReference
   alias Growth.Zscore
 
@@ -15,25 +14,26 @@ defmodule Growth.Calculate do
 
   @spec imc(number(), number()) :: number()
   def imc(weight, height) do
-    weight/ :math.pow(height / 100.0, 2)
+    weight / :math.pow(height / 100.0, 2)
   end
 
-  @spec results(map()) :: map()
-  def results(%{
-        age_in_months: age_in_months,
-        weight: weight,
-        height: height,
-        head_circumference: head_circumference,
-        gender: gender
-      } = growth) do
+  @spec results(map(), map()) :: map()
+  def results(
+        %{
+          weight: weight,
+          height: height,
+          head_circumference: head_circumference,
+          imc: "no measure"
+        } = growth,
+        %{gender: gender, age_in_months: age_in_months}
+      ) do
     weight_result =
       calculate_result(age_in_months, weight, :weight, gender)
 
     height_result =
       calculate_result(age_in_months, height, :height, gender)
 
-    imc_result =
-      calculate_result(age_in_months, imc(weight, height), :imc, gender)
+    imc_result = "no results"
 
     head_circumference_result =
       calculate_result(age_in_months, head_circumference, :head_circumference, gender)
@@ -48,7 +48,36 @@ defmodule Growth.Calculate do
     %{growth | results: result}
   end
 
-  @spec calculate_result(number(), number(), atom(), atom()) :: {:ok, float} | {:error, String.t()}
+  @spec results(map(), map()) :: map()
+  def results(
+        %{weight: weight, height: height, head_circumference: head_circumference, imc: imc} =
+          growth,
+        %{gender: gender, age_in_months: age_in_months}
+      ) do
+    weight_result =
+      calculate_result(age_in_months, weight, :weight, gender)
+
+    height_result =
+      calculate_result(age_in_months, height, :height, gender)
+
+    imc_result =
+      calculate_result(age_in_months, imc, :imc, gender)
+
+    head_circumference_result =
+      calculate_result(age_in_months, head_circumference, :head_circumference, gender)
+
+    result = %{
+      weight_result: weight_result,
+      height_result: height_result,
+      head_circumference_result: head_circumference_result,
+      imc_result: imc_result
+    }
+
+    %{growth | results: result}
+  end
+
+  @spec calculate_result(number(), number(), atom(), atom()) ::
+          {:ok, float} | {:error, String.t()}
   def calculate_result(age_in_months, measure, data_type, gender) do
     case LoadReference.load_data(data_type) do
       {:ok, data} ->
@@ -58,16 +87,17 @@ defmodule Growth.Calculate do
         |> add_percentile
         |> format_result
 
-      {:error, _cause} -> "no data found"
+      {:error, _cause} ->
+        "no data found"
     end
   end
 
   defp find_row(data, age_in_months, gender) do
     data
     |> Enum.find(fn row ->
-      row.age == age_in_months
-      && row.age_unit == "month"
-      && row.gender == gender
+      row.age == age_in_months &&
+        row.age_unit == "month" &&
+        row.gender == gender
     end)
   end
 
