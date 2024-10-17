@@ -20,23 +20,19 @@ defmodule Growth.Calculate do
   end
 
   @spec results(Measure.t(), Child.t()) :: Measure.t()
-  def results(%Measure{} = measure, %Child{} = child) do
-    weight_result =
-      calculate_result(child.age_in_months, measure.weight, :weight, child.gender)
+  def results(
+        %Measure{weight: weight, height: height, head_circumference: head_circumference, bmi: bmi} =
+          growth,
+        %Child{gender: gender, age_in_months: age_in_months}
+      ) do
+    weight_result = calculate_result(age_in_months, weight, :weight, gender)
 
-    height_result =
-      calculate_result(child.age_in_months, measure.height, :height, child.gender)
+    height_result = calculate_result(age_in_months, height, :height, gender)
 
-    bmi_result =
-      calculate_result(child.age_in_months, measure.bmi, :bmi, child.gender)
+    bmi_result = calculate_result(age_in_months, bmi, :bmi, gender)
 
     head_circumference_result =
-      calculate_result(
-        child.age_in_months,
-        measure.head_circumference,
-        :head_circumference,
-        child.gender
-      )
+      calculate_result(age_in_months, head_circumference, :head_circumference, gender)
 
     result = %{
       weight_result: weight_result,
@@ -45,11 +41,11 @@ defmodule Growth.Calculate do
       bmi_result: bmi_result
     }
 
-    %{measure | results: result}
+    %{growth | results: result}
   end
 
-  @spec calculate_result(number(), number(), atom(), atom()) :: map() | String.t()
-  def calculate_result(age_in_months, measure, data_type, gender) do
+  @spec calculate_result(number(), number() | String.t(), atom(), atom()) :: number() | String.t()
+  def calculate_result(age_in_months, measure, data_type, gender) when is_number(measure) do
     case LoadReference.load_data(data_type) do
       {:ok, data} ->
         data
@@ -63,13 +59,12 @@ defmodule Growth.Calculate do
     end
   end
 
+  def calculate_result(_age_in_months, _measure, _data_type, _gender) do
+    "no results"
+  end
+
   defp find_row(data, age_in_months, gender) do
-    data
-    |> Enum.find(fn row ->
-      row.age == age_in_months &&
-        row.age_unit == "month" &&
-        row.gender == gender
-    end)
+    Enum.find(data, &(&1.age == age_in_months && &1.age_unit == "month" && &1.gender == gender))
   end
 
   defp add_zscore(%{l: l, m: m, s: s} = data, measure) do

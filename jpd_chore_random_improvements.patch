@@ -1,0 +1,495 @@
+diff --git a/.mise.toml b/.mise.toml
+new file mode 100644
+index 0000000..93d0827
+--- /dev/null
++++ b/.mise.toml
+@@ -0,0 +1,4 @@
++[tools]
++erlang = "27.1.2"
++elixir = "1.17.3-otp-27"
++node = "23.0.0"
+diff --git a/lib/growth.ex b/lib/growth.ex
+index c8ec5df..58212a4 100644
+--- a/lib/growth.ex
++++ b/lib/growth.ex
+@@ -10,21 +10,19 @@ defmodule Growth do
+   alias Growth.Child
+   alias Growth.Measure
+ 
+-  @doc"""
++  @doc """
+   Create a child
+   """
+-  @spec create_child(map()) :: {:ok, %Child{}} | {:error, term()}
++  @spec create_child(map()) :: {:ok, Child.t()} | {:error, term()}
+   def create_child(attrs) do
+-    attrs
+-    |> Child.new()
++    Child.new(attrs)
+   end
+ 
+-  @doc"""
++  @doc """
+   Create child measures results
+   """
+-  @spec child_measure(map(), %Child{}) :: {:ok, %Measure{}} | {:error, term()}
++  @spec child_measure(map(), Child.t()) :: {:ok, Measure.t()} | {:error, term()}
+   def child_measure(attrs, child) do
+-    attrs
+-    |> Measure.new(child)
++    Measure.new(attrs, child)
+   end
+ end
+diff --git a/lib/growth/calculate.ex b/lib/growth/calculate.ex
+index 58657b1..be0e2f4 100644
+--- a/lib/growth/calculate.ex
++++ b/lib/growth/calculate.ex
+@@ -1,6 +1,7 @@
+ defmodule Growth.Calculate do
+-
++  alias Growth.Child
+   alias Growth.LoadReference
++  alias Growth.Measure
+   alias Growth.Zscore
+ 
+   @days_in_month 30.4375
+@@ -13,76 +14,74 @@ defmodule Growth.Calculate do
+     |> floor()
+   end
+ 
+-  @spec imc(number(), number()) :: number()
+-  def imc(weight, height) do
+-    weight/ :math.pow(height / 100.0, 2)
++  @spec bmi(number(), number()) :: number()
++  def bmi(weight, height) do
++    weight / :math.pow(height / 100.0, 2)
+   end
+ 
+-  @spec results(map()) :: map()
+-  def results(%{
+-        age_in_months: age_in_months,
+-        weight: weight,
+-        height: height,
+-        head_circumference: head_circumference,
+-        gender: gender
+-      } = growth) do
++  @spec results(Measure.t(), Child.t()) :: Measure.t()
++  def results(%Measure{} = measure, %Child{} = child) do
+     weight_result =
+-      calculate_result(age_in_months, weight, :weight, gender)
++      calculate_result(child.age_in_months, measure.weight, :weight, child.gender)
+ 
+     height_result =
+-      calculate_result(age_in_months, height, :height, gender)
++      calculate_result(child.age_in_months, measure.height, :height, child.gender)
+ 
+-    imc_result =
+-      calculate_result(age_in_months, imc(weight, height), :imc, gender)
++    bmi_result =
++      calculate_result(child.age_in_months, measure.bmi, :bmi, child.gender)
+ 
+     head_circumference_result =
+-      calculate_result(age_in_months, head_circumference, :head_circumference, gender)
++      calculate_result(
++        child.age_in_months,
++        measure.head_circumference,
++        :head_circumference,
++        child.gender
++      )
+ 
+     result = %{
+       weight_result: weight_result,
+       height_result: height_result,
+       head_circumference_result: head_circumference_result,
+-      imc_result: imc_result
++      bmi_result: bmi_result
+     }
+ 
+-    %{growth | results: result}
++    %{measure | results: result}
+   end
+ 
+-  @spec calculate_result(number(), number(), atom(), atom()) :: {:ok, float} | {:error, String.t()}
++  @spec calculate_result(number(), number(), atom(), atom()) :: map() | String.t()
+   def calculate_result(age_in_months, measure, data_type, gender) do
+     case LoadReference.load_data(data_type) do
+       {:ok, data} ->
+         data
+         |> find_row(age_in_months, gender)
+         |> add_zscore(measure)
+-        |> add_percentile
+-        |> format_result
++        |> add_percentile()
++        |> format_result()
+ 
+-      {:error, _cause} -> "no data found"
++      {:error, _cause} ->
++        "no data found"
+     end
+   end
+ 
+   defp find_row(data, age_in_months, gender) do
+     data
+     |> Enum.find(fn row ->
+-      row.age == age_in_months
+-      && row.age_unit == "month"
+-      && row.gender == gender
++      row.age == age_in_months &&
++        row.age_unit == "month" &&
++        row.gender == gender
+     end)
+   end
+ 
+   defp add_zscore(%{l: l, m: m, s: s} = data, measure) do
+     zscore = Zscore.calculate(measure, l, m, s)
+ 
+-    data
+-    |> Map.put(:zscore, zscore)
++    Map.put(data, :zscore, zscore)
+   end
+ 
+   defp add_percentile(%{zscore: zscore} = data) do
+     percentile = Float.round(0.5 * (:math.erf(zscore / :math.sqrt(2)) + 1), 2)
+ 
+-    data
+-    |> Map.put(:percentile, percentile)
++    Map.put(data, :percentile, percentile)
+   end
+ 
+   defp format_result(data) do
+diff --git a/lib/growth/child.ex b/lib/growth/child.ex
+index be508c1..766e44f 100644
+--- a/lib/growth/child.ex
++++ b/lib/growth/child.ex
+@@ -6,12 +6,12 @@ defmodule Growth.Child do
+   alias Growth.Calculate
+ 
+   @type t :: %__MODULE__{
+-    name: String.t(),
+-    gender: String.t(),
+-    birthday: Date.t(),
+-    measure_date: Date.t(),
+-    age_in_months: number()
+-  }
++          name: String.t(),
++          gender: String.t(),
++          birthday: Date.t(),
++          measure_date: Date.t(),
++          age_in_months: number()
++        }
+ 
+   @enforce_keys [:name, :gender, :birthday]
+ 
+@@ -23,7 +23,7 @@ defmodule Growth.Child do
+     :age_in_months
+   ]
+ 
+-  @doc"""
++  @doc """
+   Create child
+   """
+   @spec new(map()) :: {:ok, t()} | {:error, term()}
+@@ -47,7 +47,7 @@ defmodule Growth.Child do
+   end
+ 
+   defp add_age_in_months(%__MODULE__{birthday: birthday, measure_date: measure_date} = child)
+-    when not is_nil(birthday) and not is_nil(measure_date) do
++       when not is_nil(birthday) and not is_nil(measure_date) do
+     {:ok, %{child | age_in_months: Calculate.age_in_months(birthday, measure_date)}}
+   end
+ end
+diff --git a/lib/growth/load_reference.ex b/lib/growth/load_reference.ex
+index 6521557..0f1a3da 100644
+--- a/lib/growth/load_reference.ex
++++ b/lib/growth/load_reference.ex
+@@ -4,7 +4,7 @@ defmodule Growth.LoadReference do
+   @data %{
+     weight: "weight_for_age.csv",
+     height: "height_for_age.csv",
+-    imc: "bmi_for_age.csv",
++    bmi: "bmi_for_age.csv",
+     head_circumference: "head_circumference_for_age.csv"
+   }
+ 
+diff --git a/lib/growth/measure.ex b/lib/growth/measure.ex
+index db2601e..cc7a1fa 100644
+--- a/lib/growth/measure.ex
++++ b/lib/growth/measure.ex
+@@ -3,32 +3,33 @@ defmodule Growth.Measure do
+   The child measures info struct
+   """
+ 
++  alias Growth.Child
+   alias Growth.Calculate
+ 
+   @type t :: %__MODULE__{
+-    height: number(),
+-    weight: number(),
+-    head_circumference:  number(),
+-    imc: number(),
+-    results: map()
+-  }
++          height: number(),
++          weight: number(),
++          head_circumference: number(),
++          bmi: number(),
++          results: map()
++        }
+ 
+   defstruct [
+     :weight,
+     :height,
+     :head_circumference,
+-    :imc,
++    :bmi,
+     results: %{}
+   ]
+ 
+-  @doc"""
++  @doc """
+   Create a measure result for a child
+   """
+-  @spec new(map(), map()) :: {:ok, t()} | {:error, term()}
++  @spec new(map(), Child.t()) :: {:ok, t()} | {:error, term()}
+   def new(attrs, child) do
+     attrs
+     |> create_struct()
+-    |> add_imc()
++    |> add_bmi()
+     |> add_results(child)
+   end
+ 
+@@ -40,14 +41,16 @@ defmodule Growth.Measure do
+     }
+   end
+ 
+-  defp add_imc(%__MODULE__{weight: weight, height: height} = growth)
+-    when is_number(weight) and is_number(height) do
+-    %{growth | imc: Calculate.imc(weight, height)}
++  defp add_bmi(%__MODULE__{weight: weight, height: height} = growth)
++       when is_number(weight) and is_number(height) do
++    %{growth | bmi: Calculate.bmi(weight, height)}
+   end
+ 
+-  defp add_imc(growth), do: %{growth | imc: "no measure"}
++  defp add_bmi(%__MODULE__{} = growth) do
++    %{growth | bmi: "no measure"}
++  end
+ 
+-  defp add_results(growth, child) do
++  defp add_results(%__MODULE__{} = growth, %Child{} = child) do
+     {:ok, %{growth | results: Calculate.results(growth, child)}}
+   end
+ end
+diff --git a/lib/growth/zscore.ex b/lib/growth/zscore.ex
+index d41da74..a4f2574 100644
+--- a/lib/growth/zscore.ex
++++ b/lib/growth/zscore.ex
+@@ -1,5 +1,4 @@
+ defmodule Growth.Zscore do
+-
+   @spec calculate(number(), number(), number(), number()) :: number()
+   def calculate(measure, l, m, s) do
+     measure
+diff --git a/lib/growth_web.ex b/lib/growth_web.ex
+index 081b8c8..881940a 100644
+--- a/lib/growth_web.ex
++++ b/lib/growth_web.ex
+@@ -42,8 +42,9 @@ defmodule GrowthWeb do
+         formats: [:html, :json],
+         layouts: [html: GrowthWeb.Layouts]
+ 
++      use Gettext, backend: GrowthWeb.Gettext
++
+       import Plug.Conn
+-      import GrowthWeb.Gettext
+ 
+       unquote(verified_routes())
+     end
+@@ -81,11 +82,11 @@ defmodule GrowthWeb do
+ 
+   defp html_helpers do
+     quote do
++      use Gettext, backend: GrowthWe
+       # HTML escaping functionality
+       import Phoenix.HTML
+       # Core UI components and translation
+       import GrowthWeb.CoreComponents
+-      import GrowthWeb.Gettext
+ 
+       # Shortcut for generating JS commands
+       alias Phoenix.LiveView.JS
+diff --git a/lib/growth_web/components/core_components.ex b/lib/growth_web/components/core_components.ex
+index 09c5981..cd4f94e 100644
+--- a/lib/growth_web/components/core_components.ex
++++ b/lib/growth_web/components/core_components.ex
+@@ -15,9 +15,9 @@ defmodule GrowthWeb.CoreComponents do
+   Icons are provided by [heroicons](https://heroicons.com). See `icon/1` for usage.
+   """
+   use Phoenix.Component
++  use Gettext, backend: GrowthWeb.Gettext
+ 
+   alias Phoenix.LiveView.JS
+-  import GrowthWeb.Gettext
+ 
+   @doc """
+   Renders a modal.
+diff --git a/lib/growth_web/gettext.ex b/lib/growth_web/gettext.ex
+index 7044be2..59cee56 100644
+--- a/lib/growth_web/gettext.ex
++++ b/lib/growth_web/gettext.ex
+@@ -5,7 +5,7 @@ defmodule GrowthWeb.Gettext do
+   By using [Gettext](https://hexdocs.pm/gettext),
+   your module gains a set of macros for translations, for example:
+ 
+-      import GrowthWeb.Gettext
++      use Gettext, backend: GrowthWeb.Gettext
+ 
+       # Simple translation
+       gettext("Here is the string to translate")
+@@ -20,5 +20,5 @@ defmodule GrowthWeb.Gettext do
+ 
+   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
+   """
+-  use Gettext, otp_app: :growth
++  use Gettext.Backend, otp_app: :growth
+ end
+diff --git a/lib/growth_web/live/growth_live.ex b/lib/growth_web/live/growth_live.ex
+index 0c8ba61..0f5b2d6 100644
+--- a/lib/growth_web/live/growth_live.ex
++++ b/lib/growth_web/live/growth_live.ex
+@@ -10,21 +10,44 @@ defmodule GrowthWeb.GrowthLive do
+ 
+   @impl true
+   def handle_event("base_info", %{"child" => child_params}, socket) do
+-    case Growth.create_child(child_params) do
++    child_params
++    |> map_keys_to_atom()
++    |> child_transforms()
++    |> Growth.create_child()
++    |> case do
+       {:ok, child} ->
+         {:noreply, assign(socket, child: child, loading: false)}
++
+       {:error, _reason} ->
+         {:noreply, assign(socket, loading: false)}
+     end
+   end
+ 
+   @impl true
+-  def handle_event("measure_info", %{"child" => child, "measure" => measure_params}, socket) do
+-    case Growth.child_measure(measure_params, child) do
++  def handle_event("measure_info", %{"measure" => measure_params}, socket) do
++    measure_params
++    |> map_keys_to_atom()
++    |> Growth.child_measure(Map.get(socket, :child))
++    |> case do
+       {:ok, measure} ->
+-        {:noreply, assign(socket, %{child: child, measure: measure}, loading: false)}
++        {:noreply, assign(socket, measure: measure, loading: false)}
++
+       {:error, _reason} ->
+-        {:noreply, assign(socket, child: child, loading: false)}
++        {:noreply, assign(socket, loading: false)}
+     end
+   end
++
++  def map_keys_to_atom(attrs) do
++    Enum.into(attrs, %{}, fn {key, value} -> {String.to_existing_atom(key), value} end)
++  end
++
++  def child_transforms(attrs) do
++    Enum.into(attrs, %{}, fn
++      {:birthday, value} ->
++        {:birthday, Date.from_iso8601!(value)}
++
++      {key, value} ->
++        {key, value}
++    end)
++  end
+ end
+diff --git a/lib/growth_web/live/growth_live.html.heex b/lib/growth_web/live/growth_live.html.heex
+index e2c045a..d65f3ec 100644
+--- a/lib/growth_web/live/growth_live.html.heex
++++ b/lib/growth_web/live/growth_live.html.heex
+@@ -4,26 +4,24 @@
+   <div class="card bg-white shadow-md rounded-lg p-6">
+     <form phx-submit="base_info" class="form-control">
+       <label class="input input-bordered input-primary flex items-center gap-2 m-1">
+-        Nome
+-        <input type="text" name="growth[name]" class="grow" placeholder="Maria" />
++        Nome <input type="text" name="child[name]" class="grow" placeholder="Maria" />
+       </label>
+ 
+       <label class="input input-bordered input-primary flex items-center gap-2 m-1">
+         Nascimento
+-        <input type="date" name="growth[birthday]" class="grow" placeholder="daisy@site.com" />
++        <input type="date" name="child[birthday]" class="grow" placeholder="daisy@site.com" />
+       </label>
+ 
+       <label class="form-control w-full max-w-xs">
+         <div class="label">
+           <span class="label-text">Sexo</span>
+         </div>
+-        <select class="select select-bordered select-primary">
++        <select name="child[gender]" class="select select-bordered select-primary">
+           <option value="female">Menina</option>
+           <option value="male">Menino</option>
+         </select>
+       </label>
+ 
+-
+       <div class="text-center mt-4">
+         <button type="submit" class="btn btn-primary">Calcular</button>
+       </div>
+diff --git a/mix.exs b/mix.exs
+index c17e8db..4a077b6 100644
+--- a/mix.exs
++++ b/mix.exs
+@@ -32,15 +32,12 @@ defmodule Growth.MixProject do
+   # Type `mix help deps` for examples and options.
+   defp deps do
+     [
+-      {:phoenix, "~> 1.7.14"},
+-      {:phoenix_html, "~> 4.1"},
+-      {:phoenix_live_reload, "~> 1.3", only: :dev},
+-      # TODO bump on release to {:phoenix_live_view, "~> 1.0.0"},
+-      {:phoenix_live_view, "~> 1.0.0-rc.1", override: true},
+-      {:floki, ">= 0.30.0", only: :test},
+-      {:phoenix_live_dashboard, "~> 0.8.3"},
++      {:bandit, "~> 1.5"},
++      {:dns_cluster, "~> 0.1.1"},
+       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
+-      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
++      {:finch, "~> 0.13"},
++      {:floki, ">= 0.30.0", only: :test},
++      {:gettext, "~> 0.20"},
+       {:heroicons,
+        github: "tailwindlabs/heroicons",
+        tag: "v2.1.1",
+@@ -48,15 +45,18 @@ defmodule Growth.MixProject do
+        app: false,
+        compile: false,
+        depth: 1},
++      {:jason, "~> 1.2"},
++      {:nimble_csv, "~> 1.2.0"},
++      {:phoenix, "~> 1.7.14"},
++      {:phoenix_html, "~> 4.1"},
++      {:phoenix_live_dashboard, "~> 0.8.3"},
++      {:phoenix_live_reload, "~> 1.3", only: :dev},
++      # TODO bump on release to {:phoenix_live_view, "~> 1.0.0"},
++      {:phoenix_live_view, "~> 1.0.0-rc.1", override: true},
+       {:swoosh, "~> 1.5"},
+-      {:finch, "~> 0.13"},
++      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
+       {:telemetry_metrics, "~> 1.0"},
+-      {:telemetry_poller, "~> 1.0"},
+-      {:gettext, "~> 0.20"},
+-      {:jason, "~> 1.2"},
+-      {:dns_cluster, "~> 0.1.1"},
+-      {:bandit, "~> 1.5"},
+-      {:nimble_csv, "~> 1.2.0"}
++      {:telemetry_poller, "~> 1.0"}
+     ]
+   end
+ 

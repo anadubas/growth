@@ -36,9 +36,9 @@ defmodule Growth.Child do
 
   defp create_struct(attrs) do
     %__MODULE__{
-      name: attrs.name,
-      birthday: attrs.birthday,
-      gender: attrs.gender
+      name: attrs["name"],
+      birthday: Date.from_iso8601!(attrs["birthday"]),
+      gender: attrs["gender"]
     }
   end
 
