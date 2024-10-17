@@ -51,6 +51,6 @@ defmodule Growth.Measure do
   end
 
   defp add_results(%__MODULE__{} = growth, %Child{} = child) do
-    {:ok, %{growth | results: Calculate.results(growth, child)}}
+    {:ok, Calculate.results(growth, child)}
   end
 end
