@@ -17,7 +17,7 @@ defmodule Growth do
     height: number(),
     weight: number(),
     head_circumference:  number(),
-    imc: number(),
+    bmi: number(),
     results: map()
   }
 
@@ -32,7 +32,7 @@ defmodule Growth do
     :weight,
     :height,
     :head_circumference,
-    :imc,
+    :bmi,
     results: %{}
   ]
 
@@ -44,7 +44,7 @@ defmodule Growth do
     attrs
     |> create_struct()
     |> add_age_in_months()
-    |> add_imc()
+    |> add_bmi()
     |> add_results()
   end
 
@@ -67,13 +67,13 @@ defmodule Growth do
 
   defp add_age_in_months(_growth), do: {:error, "no date"}
 
-  defp add_imc({:ok, %__MODULE__{weight: weight, height: height} = growth})
+  defp add_bmi({:ok, %__MODULE__{weight: weight, height: height} = growth})
     when is_number(weight) and is_number(height) do
-    {:ok, %{growth | imc: Calculate.imc(weight, height)}}
+    {:ok, %{growth | bmi: Calculate.bmi(weight, height)}}
   end
 
-  defp add_imc({:ok, _growth}), do: {:error, "no measures"}
-  defp add_imc({:error, error}), do: {:error, error}
+  defp add_bmi({:ok, _growth}), do: {:error, "no measures"}
+  defp add_bmi({:error, error}), do: {:error, error}
 
   defp add_results({:ok, growth}) do
     {:ok, %{growth | results: Calculate.results(growth)}}

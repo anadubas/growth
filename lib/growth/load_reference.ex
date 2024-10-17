@@ -4,7 +4,7 @@ defmodule Growth.LoadReference do
   @data %{
     weight: "weight_for_age.csv",
     height: "height_for_age.csv",
-    imc: "bmi_for_age.csv",
+    bmi: "bmi_for_age.csv",
     head_circumference: "head_circumference_for_age.csv"
   }
 

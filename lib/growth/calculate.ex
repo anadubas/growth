@@ -13,8 +13,8 @@ defmodule Growth.Calculate do
     |> floor()
   end
 
-  @spec imc(number(), number()) :: number()
-  def imc(weight, height) do
+  @spec bmi(number(), number()) :: number()
+  def bmi(weight, height) do
     weight/ :math.pow(height / 100.0, 2)
   end
 
@@ -24,6 +24,7 @@ defmodule Growth.Calculate do
         weight: weight,
         height: height,
         head_circumference: head_circumference,
+        bmi: bmi,
         gender: gender
       } = growth) do
     weight_result =
@@ -32,8 +33,8 @@ defmodule Growth.Calculate do
     height_result =
       calculate_result(age_in_months, height, :height, gender)
 
-    imc_result =
-      calculate_result(age_in_months, imc(weight, height), :imc, gender)
+    bmi_result =
+      calculate_result(age_in_months, bmi, :bmi, gender)
 
     head_circumference_result =
       calculate_result(age_in_months, head_circumference, :head_circumference, gender)
@@ -42,7 +43,7 @@ defmodule Growth.Calculate do
       weight_result: weight_result,
       height_result: height_result,
       head_circumference_result: head_circumference_result,
-      imc_result: imc_result
+      bmi_result: bmi_result
     }
 
     %{growth | results: result}
