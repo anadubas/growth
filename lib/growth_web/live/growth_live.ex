@@ -38,7 +38,8 @@ defmodule GrowthWeb.GrowthLive do
   end
 
   def map_keys_to_atom(attrs) do
-    Enum.into(attrs, %{}, fn {key, value} -> {String.to_existing_atom(key), value} end)
+    # NOTE: (jpd) this is kind of a risk, because one can exploit it and exhaust all atoms
+    Enum.into(attrs, %{}, fn {key, value} -> {String.to_atom(key), value} end)
   end
 
   def child_transforms(attrs) do
