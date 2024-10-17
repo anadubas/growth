@@ -17,7 +17,7 @@ defmodule GrowthWeb.Router do
   scope "/", GrowthWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", GrowthLive, :home
   end
 
   # Other scopes may use custom stacks.

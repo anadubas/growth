@@ -11,15 +11,11 @@ module.exports = {
     "../lib/growth_web.ex",
     "../lib/growth_web/**/*.*ex"
   ],
-  theme: {
-    extend: {
-      colors: {
-        brand: "#FD4F00",
-      }
-    },
+  daisyui: {
+    themes: ["valentine", "synthwave"],
   },
   plugins: [
-    require("@tailwindcss/forms"),
+    require("daisyui"),
     // Allows prefixing tailwind classes with LiveView classes to add rules
     // only when LiveView classes are applied, for example:
     //
