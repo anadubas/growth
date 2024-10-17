@@ -65,19 +65,28 @@ defmodule Growth do
     {:ok, %{growth | age_in_months: Calculate.age_in_months(birthday, measure_date)}}
   end
 
-  defp add_age_in_months(_growth), do: {:error, "no date"}
+  defp add_age_in_months(_growth) do
+    {:error, "no date"}
+  end
 
   defp add_bmi({:ok, %__MODULE__{weight: weight, height: height} = growth})
-    when is_number(weight) and is_number(height) do
+       when is_number(weight) and is_number(height) do
     {:ok, %{growth | bmi: Calculate.bmi(weight, height)}}
   end
 
-  defp add_bmi({:ok, _growth}), do: {:error, "no measures"}
-  defp add_bmi({:error, error}), do: {:error, error}
+  defp add_bmi({:ok, _growth}) do
+    {:error, "no measures"}
+  end
+
+  defp add_bmi({:error, error}) do
+    {:error, error}
+  end
 
   defp add_results({:ok, growth}) do
     {:ok, %{growth | results: Calculate.results(growth)}}
   end
 
-  defp add_results({:error, error}), do: {:error, error}
+  defp add_results({:error, error}) do
+    {:error, error}
+  end
 end
