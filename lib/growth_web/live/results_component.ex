@@ -28,19 +28,19 @@ defmodule GrowthWeb.ResultsComponent do
 
             <% indicator_class =
               cond do
-                czscore <= -1 -> "badge badge-success"
-                czscore > -1 and czscore <= 1 -> "badge badge-info"
-                czscore > 1 and czscore <= 2 -> "badge badge-warning"
-                czscore > 2 and czscore <= 3 -> "badge badge-error"
+                czscore <= 1 and czscore >= -1 -> "badge badge-success"
+                (czscore > 1 and czscore <= 2) or (czscore < -1 and czscore >= -2) -> "badge badge-info"
+                (czscore > 2 and czscore <= 3) or (czscore < -2 and czscore >= -3)  -> "badge badge-warning"
+                czscore > 3 or czscore < -3 -> "badge badge-error"
                 true -> "badge badge-secondary"
               end %>
 
             <% indicator_text =
               cond do
-                czscore <= -1 -> "ótimo"
-                czscore > -1 and czscore <= 1 -> "bom"
-                czscore > 1 and czscore <= 2 -> "cuidado"
-                czscore > 2 and czscore <= 3 -> "alerta"
+                czscore <= 1 and czscore >= -1 -> "ótimo"
+                (czscore > 1 and czscore <= 2) or (czscore < -1 and czscore >= -2) -> "bom"
+                (czscore > 2 and czscore <= 3) or (czscore < -2 and czscore >= -3) -> "cuidado"
+                czscore > 3 or czscore < -3 -> "alerta"
                 true -> "-"
               end %>
 
@@ -62,19 +62,19 @@ defmodule GrowthWeb.ResultsComponent do
 
             <% indicator_class =
               cond do
-                hzscore <= -1 -> "badge badge-success"
-                hzscore > -1 and hzscore <= 1 -> "badge badge-info"
-                hzscore > 1 and hzscore <= 2 -> "badge badge-warning"
-                hzscore > 2 and hzscore <= 3 -> "badge badge-error"
+                hzscore <= 1 and hzscore >= -1 -> "badge badge-success"
+                (hzscore > 1 and hzscore <= 2) or (hzscore < -1 and hzscore >= -2) -> "badge badge-info"
+                (hzscore > 2 and hzscore <= 3) or (hzscore < -2 and hzscore >= -3)  -> "badge badge-warning"
+                hzscore > 3 or hzscore < -3 -> "badge badge-error"
                 true -> "badge badge-secondary"
               end %>
 
             <% indicator_text =
               cond do
-                hzscore <= -1 -> "ótimo"
-                hzscore > -1 and hzscore <= 1 -> "bom"
-                hzscore > 1 and hzscore <= 2 -> "cuidado"
-                hzscore > 2 and hzscore <= 3 -> "alerta"
+                hzscore <= 1 and hzscore >= -1 -> "ótimo"
+                (hzscore > 1 and hzscore <= 2) or (hzscore < -1 and hzscore >= -2) -> "bom"
+                (hzscore > 2 and hzscore <= 3) or (hzscore < -2 and hzscore >= -3) -> "cuidado"
+                hzscore > 3 or hzscore < -3 -> "alerta"
                 true -> "-"
               end %>
 
@@ -95,22 +95,21 @@ defmodule GrowthWeb.ResultsComponent do
 
             <% indicator_class =
               cond do
-                wzscore <= -1 -> "badge badge-success"
-                wzscore > -1 and wzscore <= 1 -> "badge badge-info"
-                wzscore > 1 and wzscore <= 2 -> "badge badge-warning"
-                wzscore > 2 and wzscore <= 3 -> "badge badge-error"
+                wzscore <= 1 and wzscore >= -1 -> "badge badge-success"
+                (wzscore > 1 and wzscore <= 2) or (wzscore < -1 and wzscore >= -2) -> "badge badge-info"
+                (wzscore > 2 and wzscore <= 3) or (wzscore < -2 and wzscore >= -3)  -> "badge badge-warning"
+                wzscore > 3 or wzscore < -3 -> "badge badge-error"
                 true -> "badge badge-secondary"
               end %>
 
             <% indicator_text =
               cond do
-                wzscore <= -1 -> "ótimo"
-                wzscore > -1 and wzscore <= 1 -> "bom"
-                wzscore > 1 and wzscore <= 2 -> "cuidado"
-                wzscore > 2 and wzscore <= 3 -> "alerta"
+                wzscore <= 1 and wzscore >= -1 -> "ótimo"
+                (wzscore > 1 and wzscore <= 2) or (wzscore < -1 and wzscore >= -2) -> "bom"
+                (wzscore > 2 and wzscore <= 3) or (wzscore < -2 and wzscore >= -3) -> "cuidado"
+                wzscore > 3 or wzscore < -3 -> "alerta"
                 true -> "-"
               end %>
-
             <strong>
               Peso Zscore:
             </strong>
@@ -128,19 +127,19 @@ defmodule GrowthWeb.ResultsComponent do
 
             <% indicator_class =
               cond do
-                izscore <= -1 -> "badge badge-success"
-                izscore > -1 and izscore <= 1 -> "badge badge-info"
-                izscore > 1 and izscore <= 2 -> "badge badge-warning"
-                izscore > 2 and izscore <= 3 -> "badge badge-error"
+                izscore <= 1 and izscore >= -1 -> "badge badge-success"
+                (izscore > 1 and izscore <= 2) or (izscore < -1 and izscore >= -2) -> "badge badge-info"
+                (izscore > 2 and izscore <= 3) or (izscore < -2 and izscore >= -3)  -> "badge badge-warning"
+                izscore > 3 or izscore < -3 -> "badge badge-error"
                 true -> "badge badge-secondary"
               end %>
 
             <% indicator_text =
               cond do
-                izscore <= -1 -> "ótimo"
-                izscore > -1 and izscore <= 1 -> "bom"
-                izscore > 1 and izscore <= 2 -> "cuidado"
-                izscore > 2 and izscore <= 3 -> "alerta"
+                izscore <= 1 and izscore >= -1 -> "ótimo"
+                (izscore > 1 and izscore <= 2) or (izscore < -1 and izscore >= -2) -> "bom"
+                (izscore > 2 and izscore <= 3) or (izscore < -2 and izscore >= -3) -> "cuidado"
+                izscore > 3 or izscore < -3 -> "alerta"
                 true -> "-"
               end %>
 
