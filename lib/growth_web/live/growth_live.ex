@@ -37,7 +37,7 @@ defmodule GrowthWeb.GrowthLive do
     |> Growth.child_measure(socket.assigns.child)
     |> case do
       {:ok, measure} ->
-        {:noreply, assign(socket, measure: measure, step: :results)}
+        {:noreply, assign(socket, measure: measure, step: :results, child: socket.assigns.child)}
 
       {:error, _reason} ->
         {:noreply, assign(socket, step: :measure_info)}

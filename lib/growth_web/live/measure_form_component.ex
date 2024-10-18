@@ -15,6 +15,7 @@ defmodule GrowthWeb.MeasureFormComponent do
             name="measure[height]"
             class="input input-bordered input-primary"
             placeholder="Altura"
+            required
           />
         </label>
 
@@ -28,6 +29,7 @@ defmodule GrowthWeb.MeasureFormComponent do
             name="measure[weight]"
             class="input input-bordered input-primary"
             placeholder="Peso"
+            required
           />
         </label>
 
@@ -41,6 +43,7 @@ defmodule GrowthWeb.MeasureFormComponent do
             name="measure[head_circumference]"
             class="input input-bordered input-primary"
             placeholder="Circunferência da Cabeça"
+            required
           />
         </label>
 
