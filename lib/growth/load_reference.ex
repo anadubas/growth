@@ -15,7 +15,7 @@ defmodule Growth.LoadReference do
         {:error, "Invalid data type: #{data_type}"}
 
       file_name ->
-        file_path = "priv/indicators/" <> file_name
+        file_path = Application.app_dir(:growth, "priv/indicators") <> "/#{file_name}"
         CSVLoader.load_csv_data(file_path)
     end
   end
