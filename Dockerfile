@@ -30,11 +30,8 @@ RUN mix deps.compile
 COPY priv priv
 COPY lib lib
 COPY --from=assets /app/assets ./assets/
-# compile assets
 RUN mix assets.deploy
-# Compile the release
 RUN mix compile
-# Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
 COPY rel rel
 RUN mix release
@@ -49,7 +46,6 @@ RUN apt-get update -y \
     tini \
   && apt-get clean \
   && rm -f /var/lib/apt/lists/*_*
-# Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
   && locale-gen
 ENV LANG en_US.UTF-8
