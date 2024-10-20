@@ -12,5 +12,3 @@ services:
       PHX_HOST: '${GROWTH_PHX_HOST:-127.0.0.1}'
       PHX_PORT: '${GROWTH_PHX_PORT:-4000}'
       PHX_SCHEME: '${GROWTH_PHX_SCHEME:-http}'
-    ports:
-      - '${GROWTH_PORT:-4000}:4000'
