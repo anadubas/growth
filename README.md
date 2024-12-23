@@ -13,8 +13,8 @@ However, in between visits, we can take the same measurements and understand how
 
 The application uses:
 
-* [`erlang`](https://www.erlang.org/) on version 27.1.3
-* [`elixir`](https://elixir-lang.org/) on version 1.17.2
+* [`erlang`](https://www.erlang.org/) on version 27.2
+* [`elixir`](https://elixir-lang.org/) on version 1.18.0
 * [`node`](https://nodejs.org/en) on version 23.0.0
 
 > [!NOTE]
