@@ -15,7 +15,7 @@ The application uses:
 
 * [`erlang`](https://www.erlang.org/) on version 27.2
 * [`elixir`](https://elixir-lang.org/) on version 1.18.0
-* [`node`](https://nodejs.org/en) on version 23.0.0
+* [`node`](https://nodejs.org/en) on version 23.5.0
 
 > [!NOTE]
 > `node` is used to fetch needed dependencies for our `assets`
