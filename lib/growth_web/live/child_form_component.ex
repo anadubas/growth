@@ -22,7 +22,12 @@ defmodule GrowthWeb.ChildFormComponent do
           <div class="label">
             <span class="label-text">Data de nascimento</span>
           </div>
-          <input type="date" name="child[birthday]" class="input input-bordered input-primary" required />
+          <input
+            type="date"
+            name="child[birthday]"
+            class="input input-bordered input-primary"
+            required
+          />
         </label>
 
         <label class="form-control w-full max-w-xs">
