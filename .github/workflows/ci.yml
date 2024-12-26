@@ -61,9 +61,9 @@ jobs:
         with:
           version-file: .tool-versions
           version-type: strict
-      - name: Cache dependencies and compiled build 
+      - name: Restore deps/compiled build from cache
         id: cache-deps
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         env:
           CACHE_NAME: cache-elixir-deps-and-build
         with:
@@ -88,9 +88,9 @@ jobs:
         with:
           version-file: .tool-versions
           version-type: strict
-      - name: Cache dependencies and compiled build 
+      - name: Restore deps/compiled build from cache
         id: cache-deps
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         env:
           CACHE_NAME: cache-elixir-deps-and-build
         with:
@@ -115,9 +115,9 @@ jobs:
         with:
           version-file: .tool-versions
           version-type: strict
-      - name: Cache dependencies and compiled build 
+      - name: Restore deps/compiled build from cache
         id: cache-deps
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         env:
           CACHE_NAME: cache-elixir-deps-and-build
         with:
@@ -127,9 +127,9 @@ jobs:
           key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
-      - name: Cache PLT resource
-        id: cache-plt
-        uses: actions/cache@v4
+      - name: Restore PLT resource from cache
+        id: cache-plt-restore
+        uses: actions/cache/restore@v4
         env:
           CACHE_NAME: cache-plt
         with:
@@ -139,5 +139,13 @@ jobs:
             ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-
       - name: Create PLTs
         run: mix dialyzer --plt
+      - name: Save PLT resource into cache
+        id: cache-plt-save
+        uses: actions/cache/save@v4
+        env:
+          CACHE_NAME: cache-plt
+        with:
+          path: priv/plts
+          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
       - name: Check
         run: mix dialyzer --format github --format dialyxir
