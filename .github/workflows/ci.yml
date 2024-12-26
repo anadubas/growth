@@ -18,7 +18,7 @@ permissions:
 jobs:
   deps:
     name: Fetch dependencies
-    runs-on: &runner ubuntu-24.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Setup erlang/elixir runtimes
         uses: erlef/setup-beam@v1
@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Cache dependencies
         id: cache-deps
-        uses: &action_cache actions/cache@v4
+        uses: actions/cache@v4
         env:
           CACHE_NAME: cache-elixir-deps
         with:
@@ -38,7 +38,7 @@ jobs:
             ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
       - name: Cache compiled build
         id: cache-build
-        uses: *action_cache
+        uses: actions/cache@v4
         env:
           CACHE_NAME: cache-compiled-build
         with:
@@ -58,7 +58,7 @@ jobs:
 
   format:
     name: Check code format
-    runs-on: *runner
+    runs-on: ubuntu-24.04
     needs:
       - deps
     steps:
@@ -67,7 +67,7 @@ jobs:
 
   credo:
     name: Check credo lint
-    runs-on: *runner
+    runs-on: ubuntu-24.04
     needs: deps
     steps:
       - name: Check
@@ -75,12 +75,12 @@ jobs:
 
   dialyzer:
     name: Check dialyzer
-    runs-on: *runner
+    runs-on: ubuntu-24.04
     needs: deps
     steps:
       - name: Cache PLT resource
         id: cache-plt
-        uses: *action_cache
+        uses: actions/cache@v4
         env:
           CACHE_NAME: cache-plt
         with:
