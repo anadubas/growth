@@ -26,27 +26,18 @@ jobs:
           version-file: .tool-versions
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Cache dependencies
+      - name: Cache dependencies and compiled build 
         id: cache-deps
         uses: actions/cache@v4
         env:
-          CACHE_NAME: cache-elixir-deps
+          CACHE_NAME: cache-elixir-deps-and-build
         with:
-          path: deps
+          path: |
+            deps
+            _build
           key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
-      - name: Cache compiled build
-        id: cache-build
-        uses: actions/cache@v4
-        env:
-          CACHE_NAME: cache-compiled-build
-        with:
-          path: _build
-          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
-            ${{ runner.os }}-mix-
       - name: Clean up to avoid incremental build as source of flakiness
         if: github.run_attempt != '1'
         run: mix do deps.clean --all, clean
