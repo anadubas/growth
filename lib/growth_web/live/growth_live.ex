@@ -72,9 +72,10 @@ defmodule GrowthWeb.GrowthLive do
 
   def measure_transforms(attrs) do
     Enum.into(attrs, %{}, fn {key, value} ->
-      with {converted_value, _} <- Float.parse(value) do
-        {key, converted_value}
-      else
+      case Float.parse(value) do
+        {converted_value, _} ->
+          {key, converted_value}
+
         _ ->
           {key, nil}
       end
