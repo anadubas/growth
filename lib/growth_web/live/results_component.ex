@@ -1,4 +1,32 @@
 defmodule GrowthWeb.ResultsComponent do
+  @moduledoc """
+  A LiveComponent responsible for displaying child growth assessment results.
+
+  This component renders a detailed view of anthropometric measurements and their
+  corresponding Z-scores and percentiles, including:
+
+  * Head circumference
+  * Height
+  * Weight
+  * BMI (Body Mass Index)
+
+  For each measurement, it displays:
+
+  * The raw measurement value
+  * The percentile value
+  * The Z-score with a visual indicator showing the assessment level:
+    * "ótimo" (optimal) - green badge for Z-scores between -1 and 1
+    * "bom" (good) - blue badge for Z-scores between -2 and -1 or 1 and 2
+    * "cuidado" (caution) - yellow badge for Z-scores between -3 and -2 or 2 and 3
+    * "alerta" (alert) - red badge for Z-scores below -3 or above 3
+
+  ## Required assigns
+
+  * `:child` - Map containing child information (name and birthday)
+  * `:measure` - Map containing measurements and their calculated results
+
+  If no results are available, it displays a "Resultados Indisponíveis" message.
+  """
   use Phoenix.LiveComponent
 
   def render(assigns) do

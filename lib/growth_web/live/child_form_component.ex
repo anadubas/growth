@@ -1,4 +1,33 @@
 defmodule GrowthWeb.ChildFormComponent do
+  @moduledoc """
+  A LiveComponent that renders a form for collecting basic child information.
+
+  This component provides a user interface for collecting essential child data:
+
+  * Name (text input)
+  * Birthday (date input)
+  * Gender (select input with options for "Menina" and "Menino")
+
+  The form features:
+
+  * Required field validation
+  * DaisyUI styled inputs and layout
+  * Responsive design with max-width constraints
+  * Card layout with shadow and rounded corners
+
+  When submitted, the form triggers a "save_child" event with data structured as:
+
+      %{
+        "child" => %{
+          "name" => "...",
+          "birthday" => "YYYY-MM-DD",
+          "gender" => "female" | "male"
+        }
+      }
+
+  The component is typically the first step in the child growth assessment process,
+  collecting the basic information needed for subsequent measurements and calculations.
+  """
   use Phoenix.LiveComponent
 
   def render(assigns) do

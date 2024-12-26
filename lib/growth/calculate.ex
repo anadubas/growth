@@ -1,4 +1,25 @@
 defmodule Growth.Calculate do
+  @moduledoc """
+  Provides calculation functions for child growth assessment metrics.
+
+  This module handles various calculations related to child growth monitoring, including:
+
+  * Age calculation in months
+  * Body Mass Index (BMI) calculation
+  * Z-score and percentile calculations for different anthropometric measurements:
+    * Weight-for-age
+    * Height-for-age
+    * BMI-for-age
+    * Head circumference-for-age
+
+  The calculations follow WHO Child Growth Standards, using the LMS method
+  to determine how a child's measurements compare to the reference population.
+
+  Results include both Z-scores and percentiles, along with standard deviation
+  reference values (SD0, SD1, SD2, SD3, SD1neg, SD2neg, SD3neg) for plotting
+  growth charts and assessing a child's growth status.
+  """
+
   alias Growth.Child
   alias Growth.LoadReference
   alias Growth.Measure

@@ -1,4 +1,17 @@
 defmodule Growth.Zscore do
+  @moduledoc """
+  Provides functionality to calculate Z-scores using the LMS method.
+
+  The LMS method is commonly used in growth assessment to calculate Z-scores
+  (standard deviation scores) for anthropometric measurements. It accounts for
+  the skewness (L), median (M), and coefficient of variation (S) of the
+  reference distribution.
+
+  The module implements extended Z-score calculations that handle extreme values
+  (beyond ±3 SD) using a special adjustment to prevent excessive values while
+  maintaining the relative ordering of measurements.
+  """
+
   @spec calculate(number(), number(), number(), number()) :: number()
   def calculate(measure, l, m, s) do
     measure
