@@ -54,6 +54,25 @@ jobs:
     needs:
       - deps
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup erlang/elixir runtimes
+        uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+      - name: Cache dependencies and compiled build 
+        id: cache-deps
+        uses: actions/cache@v4
+        env:
+          CACHE_NAME: cache-elixir-deps-and-build
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
       - name: Check
         run: mix format --check-formatted
 
@@ -62,6 +81,25 @@ jobs:
     runs-on: ubuntu-24.04
     needs: deps
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup erlang/elixir runtimes
+        uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+      - name: Cache dependencies and compiled build 
+        id: cache-deps
+        uses: actions/cache@v4
+        env:
+          CACHE_NAME: cache-elixir-deps-and-build
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
       - name: Check
         run: mix credo --strict
 
@@ -70,6 +108,25 @@ jobs:
     runs-on: ubuntu-24.04
     needs: deps
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup erlang/elixir runtimes
+        uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+      - name: Cache dependencies and compiled build 
+        id: cache-deps
+        uses: actions/cache@v4
+        env:
+          CACHE_NAME: cache-elixir-deps-and-build
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
       - name: Cache PLT resource
         id: cache-plt
         uses: actions/cache@v4
