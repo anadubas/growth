@@ -80,6 +80,12 @@ defmodule Growth.MixProject do
         "tailwind growth --minify",
         "esbuild growth --minify",
         "phx.digest"
+      ],
+      ci: [
+        "compile --warnings-as-errors",
+        "format --check-formatted",
+        "credo --strict",
+        "dialyzer --format github --format dialyxir"
       ]
     ]
   end
