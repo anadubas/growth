@@ -82,7 +82,7 @@ defmodule Growth.MixProject do
         "phx.digest"
       ],
       ci: [
-        "compile --warnings-as-errors",
+        "compile --force --warnings-as-errors",
         "format --check-formatted",
         "credo --strict",
         "dialyzer --format github --format dialyxir"
