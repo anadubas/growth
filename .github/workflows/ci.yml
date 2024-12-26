@@ -1,0 +1,94 @@
+---
+name: Continuous Integration Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  MIX_ENV: test
+
+permissions:
+  contents: read
+
+jobs:
+  deps:
+    name: Fetch dependencies
+    runs-on: &runner ubuntu-24.04
+    steps:
+      - name: Setup erlang/elixir runtimes
+        uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Cache dependencies
+        id: cache-deps
+        uses: &action_cache actions/cache@v4
+        env:
+          CACHE_NAME: cache-elixir-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
+      - name: Cache compiled build
+        id: cache-build
+        uses: *action_cache
+        env:
+          CACHE_NAME: cache-compiled-build
+        with:
+          path: _build
+          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
+            ${{ runner.os }}-mix-
+      - name: Clean up to avoid incremental build as source of flakiness
+        if: github.run_attempt != '1'
+        run: mix do deps.clean --all, clean
+        shell: sh
+      - name: Install dependencies
+        run: mix deps.get
+      - name: Compile without warnings
+        run: mix compile --warnings-as-errors
+
+  format:
+    name: Check code format
+    runs-on: *runner
+    needs:
+      - deps
+    steps:
+      - name: Check
+        run: mix format --check-formatted
+
+  credo:
+    name: Check credo lint
+    runs-on: *runner
+    needs: deps
+    steps:
+      - name: Check
+        run: mix credo --strict
+
+  dialyzer:
+    name: Check dialyzer
+    runs-on: *runner
+    needs: deps
+    steps:
+      - name: Cache PLT resource
+        id: cache-plt
+        uses: *action_cache
+        env:
+          CACHE_NAME: cache-plt
+        with:
+          path: priv/plts
+          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-
+      - name: Create PLTs
+        run: mix dialyzer --plt
+      - name: Check
+        run: mix dialyzer --format github --format dialyxir
