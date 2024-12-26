@@ -24,6 +24,7 @@ jobs:
         uses: erlef/setup-beam@v1
         with:
           version-file: .tool-versions
+          version-type: strict
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Cache dependencies and compiled build 
