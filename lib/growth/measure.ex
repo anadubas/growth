@@ -3,8 +3,8 @@ defmodule Growth.Measure do
   The child measures info struct
   """
 
-  alias Growth.Child
   alias Growth.Calculate
+  alias Growth.Child
 
   @type t :: %__MODULE__{
           height: number(),
