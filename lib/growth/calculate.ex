@@ -62,10 +62,10 @@ defmodule Growth.Calculate do
       bmi_result: bmi_result
     }
 
-    %{growth | results: result}
+    %Measure{growth | results: result}
   end
 
-  @spec calculate_result(number(), number() | String.t(), atom(), atom()) :: number() | String.t()
+  @spec calculate_result(number(), number() | String.t(), atom(), atom()) :: map() | String.t()
   def calculate_result(age_in_months, measure, data_type, gender) when is_number(measure) do
     case LoadReference.load_data(data_type) do
       {:ok, data} ->

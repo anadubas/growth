@@ -13,7 +13,7 @@ defmodule Growth do
   @doc """
   Create a child
   """
-  @spec create_child(map()) :: {:ok, Child.t()} | {:error, term()}
+  @spec create_child(map()) :: {:ok, Child.t()}
   def create_child(attrs) do
     Child.new(attrs)
   end
@@ -21,7 +21,7 @@ defmodule Growth do
   @doc """
   Create child measures results
   """
-  @spec child_measure(map(), Child.t()) :: {:ok, Measure.t()} | {:error, term()}
+  @spec child_measure(map(), Child.t()) :: {:ok, Measure.t()}
   def child_measure(attrs, child) do
     Measure.new(attrs, child)
   end
