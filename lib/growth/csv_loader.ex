@@ -1,4 +1,22 @@
 defmodule Growth.CSVLoader do
+  @moduledoc """
+  Handles loading and parsing of CSV files containing growth reference data.
+
+  This module provides functionality to:
+
+  * Load CSV files containing WHO growth standards data
+  * Parse the CSV content into structured Elixir maps
+  * Convert string values to appropriate numeric types (integers for age, floats for measurements)
+
+  The module expects CSV files with headers in the first row and uses RFC4180 standard
+  CSV parsing through NimbleCSV.
+
+  The function returns either:
+
+  * `{:ok, list_of_maps}` where each map represents a row with atomized keys
+  * `{:error, reason}` if the file cannot be found or processed
+  """
+
   alias NimbleCSV.RFC4180, as: CSV
 
   @spec load_csv_data(String.t()) :: {:ok, list(map)} | {:error, String.t()}

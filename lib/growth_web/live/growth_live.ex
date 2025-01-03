@@ -16,32 +16,24 @@ defmodule GrowthWeb.GrowthLive do
 
   @impl true
   def handle_event("save_child", %{"child" => child_params}, socket) do
-    child_params
-    |> map_keys_to_atom()
-    |> child_transforms()
-    |> Growth.create_child()
-    |> case do
-      {:ok, child} ->
-        {:noreply, assign(socket, child: child, step: :measure_info)}
+    {:ok, child} =
+      child_params
+      |> map_keys_to_atom()
+      |> child_transforms()
+      |> Growth.create_child()
 
-      {:error, _reason} ->
-        {:noreply, assign(socket, step: :child_info)}
-    end
+    {:noreply, assign(socket, child: child, step: :measure_info)}
   end
 
   @impl true
   def handle_event("save_measure", %{"measure" => measure_params}, socket) do
-    measure_params
-    |> map_keys_to_atom()
-    |> measure_transforms()
-    |> Growth.child_measure(socket.assigns.child)
-    |> case do
-      {:ok, measure} ->
-        {:noreply, assign(socket, measure: measure, step: :results, child: socket.assigns.child)}
+    {:ok, measure} =
+      measure_params
+      |> map_keys_to_atom()
+      |> measure_transforms()
+      |> Growth.child_measure(socket.assigns.child)
 
-      {:error, _reason} ->
-        {:noreply, assign(socket, step: :measure_info)}
-    end
+    {:noreply, assign(socket, measure: measure, step: :results, child: socket.assigns.child)}
   end
 
   @impl true
@@ -72,9 +64,10 @@ defmodule GrowthWeb.GrowthLive do
 
   def measure_transforms(attrs) do
     Enum.into(attrs, %{}, fn {key, value} ->
-      with {converted_value, _} <- Float.parse(value) do
-        {key, converted_value}
-      else
+      case Float.parse(value) do
+        {converted_value, _} ->
+          {key, converted_value}
+
         _ ->
           {key, nil}
       end

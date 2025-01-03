@@ -1,0 +1,151 @@
+---
+name: Continuous Integration Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  MIX_ENV: test
+
+permissions:
+  contents: read
+
+jobs:
+  deps:
+    name: Fetch dependencies
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup erlang/elixir runtimes
+        uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+      - name: Cache dependencies and compiled build 
+        id: cache-deps
+        uses: actions/cache@v4
+        env:
+          CACHE_NAME: cache-elixir-deps-and-build
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
+      - name: Clean up to avoid incremental build as source of flakiness
+        if: github.run_attempt != '1'
+        run: mix do deps.clean --all, clean
+        shell: sh
+      - name: Install dependencies
+        run: mix deps.get
+      - name: Compile without warnings
+        run: mix compile --warnings-as-errors
+
+  format:
+    name: Check code format
+    runs-on: ubuntu-24.04
+    needs:
+      - deps
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup erlang/elixir runtimes
+        uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+      - name: Restore deps/compiled build from cache
+        id: cache-deps
+        uses: actions/cache/restore@v4
+        env:
+          CACHE_NAME: cache-elixir-deps-and-build
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
+      - name: Check
+        run: mix format --check-formatted
+
+  credo:
+    name: Check credo lint
+    runs-on: ubuntu-24.04
+    needs: deps
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup erlang/elixir runtimes
+        uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+      - name: Restore deps/compiled build from cache
+        id: cache-deps
+        uses: actions/cache/restore@v4
+        env:
+          CACHE_NAME: cache-elixir-deps-and-build
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
+      - name: Check
+        run: mix credo --strict
+
+  dialyzer:
+    name: Check dialyzer
+    runs-on: ubuntu-24.04
+    needs: deps
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup erlang/elixir runtimes
+        uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+      - name: Restore deps/compiled build from cache
+        id: cache-deps
+        uses: actions/cache/restore@v4
+        env:
+          CACHE_NAME: cache-elixir-deps-and-build
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
+      - name: Restore PLT resource from cache
+        id: cache-plt-restore
+        uses: actions/cache/restore@v4
+        env:
+          CACHE_NAME: cache-plt
+        with:
+          path: priv/plts
+          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-
+      - name: Create PLTs
+        run: mix dialyzer --plt
+      - name: Save PLT resource into cache
+        id: cache-plt-save
+        uses: actions/cache/save@v4
+        env:
+          CACHE_NAME: cache-plt
+        with:
+          path: priv/plts
+          key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+      - name: Check
+        run: mix dialyzer --format github --format dialyxir

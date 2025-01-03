@@ -6,11 +6,11 @@ defmodule Growth.Child do
   alias Growth.Calculate
 
   @type t :: %__MODULE__{
-          name: String.t(),
-          gender: String.t(),
-          birthday: Date.t(),
-          measure_date: Date.t(),
-          age_in_months: number()
+          name: String.t() | nil,
+          gender: String.t() | nil,
+          birthday: Date.t() | nil,
+          measure_date: Date.t() | nil,
+          age_in_months: number() | nil
         }
 
   @enforce_keys [:name, :gender, :birthday]
@@ -26,7 +26,7 @@ defmodule Growth.Child do
   @doc """
   Create child
   """
-  @spec new(map()) :: {:ok, t()} | {:error, term()}
+  @spec new(map()) :: {:ok, t()}
   def new(attrs) do
     attrs
     |> create_struct()

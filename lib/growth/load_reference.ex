@@ -1,4 +1,27 @@
 defmodule Growth.LoadReference do
+  @moduledoc """
+  Manages the loading of WHO growth reference data files for different anthropometric indicators.
+
+  This module provides a centralized way to access various WHO growth standard
+  reference data files stored in the application's priv/indicators directory.
+  It supports loading data for:
+
+  * Weight-for-age
+  * Height-for-age
+  * BMI-for-age
+  * Head circumference-for-age
+
+  The module uses predefined file mappings and ensures that only valid indicator
+  types can be requested. All data files are expected to be in CSV format and
+  located in the application's priv/indicators directory.
+
+  ## Supported data types
+
+  * `:weight` - Weight-for-age data
+  * `:height` - Height-for-age data
+  * `:bmi` - BMI-for-age data
+  * `:head_circumference` - Head circumference-for-age data
+  """
   alias Growth.CSVLoader
 
   @data %{

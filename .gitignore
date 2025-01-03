@@ -35,3 +35,6 @@ growth-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# Dialyzer plt files
+/priv/plts/*.plt
+/priv/plts/*.plt.hash

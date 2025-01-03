@@ -8,6 +8,11 @@
   <% end %>
 
   <%= if @step == :results do %>
-    <.live_component module={GrowthWeb.ResultsComponent} id="results" measure={@measure} child={@child} />
+    <.live_component
+      module={GrowthWeb.ResultsComponent}
+      id="results"
+      measure={@measure}
+      child={@child}
+    />
   <% end %>
 </div>
