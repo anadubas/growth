@@ -37,8 +37,8 @@ defmodule GrowthWeb.ResultsComponent do
           <h2 class="text-lg font-bold mb-4">Criança</h2>
 
           <div class="card bg-base-200 rounded-box grid flex-grow place-items-center">
-            <strong>Nome:</strong> <%= @child.name %>
-            <strong>Data de nascimento:</strong> <%= @child.birthday %>
+            <strong>Nome:</strong> {@child.name}
+            <strong>Data de nascimento:</strong> {@child.birthday}
           </div>
         </div>
 
@@ -48,8 +48,8 @@ defmodule GrowthWeb.ResultsComponent do
           <h2 class="text-lg font-bold mb-4">Resultados</h2>
 
           <div class="card bg-base-200 rounded-box grid flex-grow place-items-center gap-1 p-3">
-            <strong>Perímetro Cefálico:</strong> <%= @measure.head_circumference %>
-            <strong>Perímetro Cefálico Percentil:</strong> <%= @measure.results.head_circumference_result.percentile %>% <% czscore =
+            <strong>Perímetro Cefálico:</strong> {@measure.head_circumference}
+            <strong>Perímetro Cefálico Percentil:</strong> {@measure.results.head_circumference_result.percentile}% <% czscore =
               Float.round(@measure.results.head_circumference_result.zscore, 2) %>
 
             <% indicator_class =
@@ -83,14 +83,14 @@ defmodule GrowthWeb.ResultsComponent do
               Perímetro Cefálico Zscore:
             </strong>
             <div class="inline-block ml-2">
-              <span class={indicator_class}><%= indicator_text %></span>
-              <%= czscore %>
+              <span class={indicator_class}>{indicator_text}</span>
+              {czscore}
             </div>
           </div>
 
           <div class="card bg-base-200 rounded-box grid flex-grow place-items-center gap-1 p-3">
-            <strong>Altura:</strong> <%= @measure.height %>
-            <strong>Altura Percentil:</strong> <%= @measure.results.height_result.percentile %>% <% hzscore =
+            <strong>Altura:</strong> {@measure.height}
+            <strong>Altura Percentil:</strong> {@measure.results.height_result.percentile}% <% hzscore =
               Float.round(@measure.results.height_result.zscore, 2) %>
 
             <% indicator_class =
@@ -124,14 +124,14 @@ defmodule GrowthWeb.ResultsComponent do
               Altura Zscore:
             </strong>
             <div class="inline-block ml-2">
-              <span class={indicator_class}><%= indicator_text %></span>
-              <%= hzscore %>
+              <span class={indicator_class}>{indicator_text}</span>
+              {hzscore}
             </div>
           </div>
 
           <div class="card bg-base-200 rounded-box grid flex-grow place-items-center gap-1 p-3">
-            <strong>Peso:</strong> <%= @measure.weight %>
-            <strong>Peso Percentil:</strong> <%= @measure.results.weight_result.percentile %>% <% wzscore =
+            <strong>Peso:</strong> {@measure.weight}
+            <strong>Peso Percentil:</strong> {@measure.results.weight_result.percentile}% <% wzscore =
               Float.round(@measure.results.weight_result.zscore, 2) %>
 
             <% indicator_class =
@@ -164,14 +164,14 @@ defmodule GrowthWeb.ResultsComponent do
               Peso Zscore:
             </strong>
             <div class="inline-block ml-2">
-              <span class={indicator_class}><%= indicator_text %></span>
-              <%= wzscore %>
+              <span class={indicator_class}>{indicator_text}</span>
+              {wzscore}
             </div>
           </div>
 
           <div class="card bg-base-200 rounded-box grid flex-grow place-items-center gap-1 p-3">
-            <strong><abbr title="Índice de massa corporal">IMC</abbr>:</strong> <%= @measure.bmi %>
-            <strong><abbr title="Índice de massa corporal">IMC</abbr> Percentil:</strong> <%= @measure.results.bmi_result.percentile %>% <% izscore =
+            <strong><abbr title="Índice de massa corporal">IMC</abbr>:</strong> {@measure.bmi}
+            <strong><abbr title="Índice de massa corporal">IMC</abbr> Percentil:</strong> {@measure.results.bmi_result.percentile}% <% izscore =
               Float.round(@measure.results.bmi_result.zscore, 2) %>
 
             <% indicator_class =
@@ -205,8 +205,8 @@ defmodule GrowthWeb.ResultsComponent do
               <abbr title="Índice de massa corporal">IMC</abbr> Zscore:
             </strong>
             <div class="inline-block ml-2">
-              <span class={indicator_class}><%= indicator_text %></span>
-              <%= izscore %>
+              <span class={indicator_class}>{indicator_text}</span>
+              {izscore}
             </div>
           </div>
         </div>
