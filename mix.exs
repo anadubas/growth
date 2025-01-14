@@ -38,7 +38,7 @@ defmodule Growth.MixProject do
       {:bandit, "~> 1.5"},
       {:credo, "~> 1.7.10"},
       {:dns_cluster, "~> 0.1.1"},
-      {:dialyxir, "~> 1.4.5"},
+      {:dialyxir, "~> 1.4.5", only: :test, runtime: false},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:finch, "~> 0.13"},
       {:floki, ">= 0.30.0", only: :test},
