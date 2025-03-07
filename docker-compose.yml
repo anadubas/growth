@@ -1,4 +1,6 @@
 ---
+name: ${GROWTH_PROJECT_NAME:-growth}
+
 services:
   growth:
     image: 'anadubas/growth:${GROWTH_TAG:-dev}'
