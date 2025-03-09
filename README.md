@@ -7,15 +7,15 @@ Your pediatrician or primary caretaker constantly measures your child's anthropo
 However, in between visits, we can take the same measurements and understand how our child is growing.
 
 > [!CAUTION]
-> **This is not a diagnostic tool. Always talk with your pediatrician or primary caretaker.**
+> **This is not a diagnostic tool**. Always talk with your pediatrician or primary caretaker.
 
 ## Preparing the environment
 
 The application uses:
 
-* [`erlang`](https://www.erlang.org/) on version 27.2
-* [`elixir`](https://elixir-lang.org/) on version 1.18.1
-* [`node`](https://nodejs.org/en) on version 23.5.0
+* [`erlang`](https://www.erlang.org/) on version 27.3
+* [`elixir`](https://elixir-lang.org/) on version 1.18.3
+* [`node`](https://nodejs.org/en) on version 23.9.0
 
 > [!NOTE]
 > `node` is used to fetch needed dependencies for our `assets`
