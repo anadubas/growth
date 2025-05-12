@@ -16,7 +16,8 @@ defmodule Growth.Application do
       # Start a worker by calling: Growth.Worker.start_link(arg)
       # {Growth.Worker, arg},
       # Start to serve requests, typically the last entry
-      GrowthWeb.Endpoint
+      GrowthWeb.Endpoint,
+      Growth.CSVLoader
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

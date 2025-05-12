@@ -11,6 +11,7 @@ defmodule Growth.Measure do
           weight: number() | nil,
           head_circumference: number() | nil,
           bmi: number() | String.t() | nil,
+          child: Child.t() | nil,
           results: map()
         }
 
@@ -19,6 +20,7 @@ defmodule Growth.Measure do
     :height,
     :head_circumference,
     :bmi,
+    :child,
     results: %{}
   ]
 
@@ -28,16 +30,17 @@ defmodule Growth.Measure do
   @spec new(map(), Child.t()) :: {:ok, t()}
   def new(attrs, child) do
     attrs
-    |> create_struct()
+    |> create_struct(child)
     |> add_bmi()
     |> add_results(child)
   end
 
-  defp create_struct(attrs) do
+  defp create_struct(attrs, child) do
     %__MODULE__{
       height: attrs.height,
       weight: attrs.weight,
-      head_circumference: attrs.head_circumference
+      head_circumference: attrs.head_circumference,
+      child: child
     }
   end
 

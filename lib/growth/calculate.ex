@@ -3,21 +3,11 @@ defmodule Growth.Calculate do
   Provides calculation functions for child growth assessment metrics.
 
   This module handles various calculations related to child growth monitoring, including:
-
-  * Age calculation in months
-  * Body Mass Index (BMI) calculation
-  * Z-score and percentile calculations for different anthropometric measurements:
-    * Weight-for-age
-    * Height-for-age
-    * BMI-for-age
-    * Head circumference-for-age
-
-  The calculations follow WHO Child Growth Standards, using the LMS method
-  to determine how a child's measurements compare to the reference population.
-
-  Results include both Z-scores and percentiles, along with standard deviation
-  reference values (SD0, SD1, SD2, SD3, SD1neg, SD2neg, SD3neg) for plotting
-  growth charts and assessing a child's growth status.
+    * Z-scores and percentiles for different anthropometric measurements:
+        * Weight-for-age
+        * Height-for-age
+        * BMI-for-age
+        * Head circumference-for-age
   """
 
   alias Growth.Child
@@ -40,20 +30,28 @@ defmodule Growth.Calculate do
     weight / :math.pow(height / 100.0, 2)
   end
 
+  @doc """
+  Calculates the growth assessment metrics (Z-scores and percentiles) for a child.
+
+  ## Parameters
+    - `growth`: A `Measure` struct containing the child's anthropometric data (weight, height, etc.).
+    - `child`: A `Child` struct containing the child's gender and age in months.
+
+  ## Returns
+    - A `Measure` struct with added growth results (Z-scores, percentiles, and SD values).
+  """
   @spec results(Measure.t(), Child.t()) :: Measure.t()
   def results(
         %Measure{weight: weight, height: height, head_circumference: head_circumference, bmi: bmi} =
           growth,
-        %Child{gender: gender, age_in_months: age_in_months}
+        %Child{} = child
       ) do
-    weight_result = calculate_result(age_in_months, weight, :weight, gender)
-
-    height_result = calculate_result(age_in_months, height, :height, gender)
-
-    bmi_result = calculate_result(age_in_months, bmi, :bmi, gender)
+    weight_result = calculate_result(weight, :weight, child)
+    height_result = calculate_result(height, :height, child)
+    bmi_result = calculate_result(bmi, :bmi, child)
 
     head_circumference_result =
-      calculate_result(age_in_months, head_circumference, :head_circumference, gender)
+      calculate_result(head_circumference, :head_circumference, child)
 
     result = %{
       weight_result: weight_result,
@@ -65,17 +63,30 @@ defmodule Growth.Calculate do
     %Measure{growth | results: result}
   end
 
-  @spec calculate_result(number(), number() | String.t(), atom(), atom()) :: map() | String.t()
-  def calculate_result(age_in_months, measure, data_type, gender) when is_number(measure) do
-    case LoadReference.load_data(data_type) do
+  @doc """
+  Calculates the growth assessment metrics (Z-scores and percentiles) for a given measurement.
+
+  ## Parameters
+    - `age_in_months`: The child's age in months.
+    - `measure`: The specific measurement (e.g., weight, height, etc.).
+    - `data_type`: The type of measurement (e.g., `:weight`, `:height`).
+    - `gender`: The child's gender.
+
+  ## Returns
+    - A map containing Z-scores, percentiles, and standard deviation values.
+    - If no data is found, returns the string "no results".
+  """
+  @spec calculate_result(number(), number(), atom(), atom()) :: map() | String.t()
+  def calculate_result(measure, data_type, %Child{} = child)
+      when is_number(measure) do
+    case LoadReference.load_data(data_type, child) do
       {:ok, data} ->
         data
-        |> find_row(age_in_months, gender)
         |> add_zscore(measure)
         |> add_percentile()
         |> format_result()
 
-      {:error, _cause} ->
+      {:error, _} ->
         "no data found"
     end
   end
@@ -84,19 +95,13 @@ defmodule Growth.Calculate do
     "no results"
   end
 
-  defp find_row(data, age_in_months, gender) do
-    Enum.find(data, &(&1.age == age_in_months && &1.age_unit == "month" && &1.gender == gender))
-  end
-
   defp add_zscore(%{l: l, m: m, s: s} = data, measure) do
     zscore = Zscore.calculate(measure, l, m, s)
-
     Map.put(data, :zscore, zscore)
   end
 
   defp add_percentile(%{zscore: zscore} = data) do
     percentile = Float.round(0.5 * (:math.erf(zscore / :math.sqrt(2)) + 1), 2)
-
     Map.put(data, :percentile, percentile * 100.0)
   end
 

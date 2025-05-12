@@ -46,8 +46,8 @@ defmodule Growth.Child do
     %{child | measure_date: Date.utc_today()}
   end
 
-  defp add_age_in_months(%__MODULE__{birthday: birthday, measure_date: measure_date} = child)
-       when not is_nil(birthday) and not is_nil(measure_date) do
+  def add_age_in_months(%__MODULE__{birthday: birthday, measure_date: measure_date} = child)
+      when not is_nil(birthday) and not is_nil(measure_date) do
     {:ok, %{child | age_in_months: Calculate.age_in_months(birthday, measure_date)}}
   end
 end

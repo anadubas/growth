@@ -5,13 +5,13 @@ defmodule GrowthWeb.GrowthLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    deafult_child = %Child{
+    default_child = %Child{
       name: "",
       gender: "",
       birthday: ~D[2000-01-01]
     }
 
-    {:ok, assign(socket, child: deafult_child, measure: %Measure{}, step: :child_info)}
+    {:ok, assign(socket, child: default_child, measure: %Measure{}, step: :child_info)}
   end
 
   @impl true
@@ -31,6 +31,7 @@ defmodule GrowthWeb.GrowthLive do
       measure_params
       |> map_keys_to_atom()
       |> measure_transforms()
+      # Passando a criança associada
       |> Growth.child_measure(socket.assigns.child)
 
     {:noreply, assign(socket, measure: measure, step: :results, child: socket.assigns.child)}
@@ -48,7 +49,6 @@ defmodule GrowthWeb.GrowthLive do
   end
 
   def map_keys_to_atom(attrs) do
-    # NOTE: (jpd) this is kind of a risk, because one can exploit it and exhaust all atoms
     Enum.into(attrs, %{}, fn {key, value} -> {String.to_atom(key), value} end)
   end
 
