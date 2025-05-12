@@ -51,6 +51,7 @@ defmodule Growth.MixProject do
        compile: false,
        depth: 1},
       {:jason, "~> 1.2"},
+      {:meck, "~> 1.0.0", only: :test},
       {:nimble_csv, "~> 1.2.0"},
       {:phoenix, "~> 1.7.14"},
       {:phoenix_html, "~> 4.1"},
@@ -60,8 +61,7 @@ defmodule Growth.MixProject do
       {:swoosh, "~> 1.5"},
       {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
       {:telemetry_metrics, "~> 1.0"},
-      {:telemetry_poller, "~> 1.0"},
-      {:meck, "~> 0.8.13", only: :test}
+      {:telemetry_poller, "~> 1.0"}
     ]
   end
 
