@@ -76,7 +76,7 @@ defmodule Growth.Calculate do
     - A map containing Z-scores, percentiles, and standard deviation values.
     - If no data is found, returns the string "no results".
   """
-  @spec calculate_result(number(), atom(), atom()) :: map() | String.t()
+  @spec calculate_result(number(), atom(), Child.t()) :: map() | String.t()
   def calculate_result(measure, data_type, %Child{} = child)
       when is_number(measure) do
     case LoadReference.load_data(data_type, child) do
