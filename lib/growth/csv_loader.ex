@@ -74,11 +74,9 @@ defmodule Growth.CSVLoader do
   end
 
   defp create_ets_table(name) do
-    try do
-      :ets.new(name, [:set, :public, :named_table])
-    rescue
-      _ -> :ok
-    end
+    :ets.new(name, [:set, :public, :named_table])
+  rescue
+    _ -> :ok
   end
 
   defp convert_to_map([header | rows]) do

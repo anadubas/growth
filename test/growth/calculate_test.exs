@@ -25,19 +25,21 @@ defmodule Growth.CalculateTest do
     :meck.expect(Growth.Zscore, :calculate, fn _, _, _, _ -> 0.5 end)
 
     :meck.new(Growth.LoadReference, [:passthrough])
+
     :meck.expect(Growth.LoadReference, :load_data, fn _, _ ->
-      {:ok, %{
-        l: 1.0,
-        m: 10.0,
-        s: 0.1,
-        sd0: 10.0,
-        sd1: 11.0,
-        sd2: 12.0,
-        sd3: 13.0,
-        sd1neg: 9.0,
-        sd2neg: 8.0,
-        sd3neg: 7.0
-      }}
+      {:ok,
+       %{
+         l: 1.0,
+         m: 10.0,
+         s: 0.1,
+         sd0: 10.0,
+         sd1: 11.0,
+         sd2: 12.0,
+         sd3: 13.0,
+         sd1neg: 9.0,
+         sd2neg: 8.0,
+         sd3neg: 7.0
+       }}
     end)
 
     child = %Child{
