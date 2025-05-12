@@ -1,8 +1,8 @@
 defmodule Growth.MeasureTest do
   use ExUnit.Case, async: true
 
-  alias Growth.Measure
   alias Growth.Child
+  alias Growth.Measure
 
   describe "new/2" do
     setup do
