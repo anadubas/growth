@@ -1,0 +1,46 @@
+---
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - task --list
+    silent: true
+
+  build:
+    desc: "Compile the application"
+    cmds:
+      - mix compile --force --warnings-as-errors
+
+  check_format:
+    desc: "Check if the code is formatted"
+    cmds:
+      - mix format --check-formatted
+
+  check_credo:
+    desc: "Check if the code follows the Credo rules"
+    cmds:
+      - mix credo --strict
+
+  check_dialyzer:
+    desc: "Check if the code is linted"
+    cmds:
+      - mix dialyzer --format dialyxir
+
+  deps:
+    desc: "Install dependencies"
+    cmds:
+      - mix deps.get
+
+  lint:
+    desc: "Run all linters"
+    cmds:
+      - task: build
+      - task: check_format
+      - task: check_credo
+      - task: check_dialyzer
+
+  test:
+    desc: "Run all tests"
+    cmds:
+      - mix test --trace
