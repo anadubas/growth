@@ -1,0 +1,16 @@
+---
+pre-commit:
+  parallel: true
+  commands:
+    check-format:
+      run: task check_format
+    credo:
+      run: task check_credo
+    dialyzer:
+      run: task check_dialyzer
+
+pre-push:
+  parallel: true
+  commands:
+    test:
+      run: task test
