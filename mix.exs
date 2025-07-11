@@ -40,7 +40,7 @@ defmodule Growth.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:dialyxir, "~> 1.4.5", only: [:test, :dev], runtime: false},
       {:esbuild, "~> 0.10.0", runtime: Mix.env() == :dev},
-      {:finch, "~> 0.19.0"},
+      {:finch, "~> 0.20.0"},
       {:floki, "~> 0.38.0", only: :test},
       {:gettext, "~> 0.26.0"},
       {:heroicons,
@@ -61,7 +61,7 @@ defmodule Growth.MixProject do
       {:swoosh, "~> 1.19.0"},
       {:tailwind, "~> 0.3.0", runtime: Mix.env() == :dev},
       {:telemetry_metrics, "~> 1.1.0"},
-      {:telemetry_poller, "~> 1.2.0"}
+      {:telemetry_poller, "~> 1.3.0"}
     ]
   end
 
