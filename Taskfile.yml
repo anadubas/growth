@@ -25,7 +25,7 @@ tasks:
   check_dialyzer:
     desc: "Check if the code is linted"
     cmds:
-      - mix dialyzer --format dialyxir
+      - mix dialyzer --format github --format dialyxir
 
   deps:
     desc: "Install dependencies"
