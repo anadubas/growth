@@ -35,33 +35,33 @@ defmodule Growth.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:bandit, "~> 1.5"},
+      {:bandit, "~> 1.7.0"},
       {:credo, "~> 1.7.10"},
       {:dns_cluster, "~> 0.2.0"},
       {:dialyxir, "~> 1.4.5", only: [:test, :dev], runtime: false},
-      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
-      {:finch, "~> 0.13"},
-      {:floki, ">= 0.30.0", only: :test},
-      {:gettext, "~> 0.20"},
+      {:esbuild, "~> 0.10.0", runtime: Mix.env() == :dev},
+      {:finch, "~> 0.20.0"},
+      {:floki, "~> 0.38.0", only: :test},
+      {:gettext, "~> 0.26.0"},
       {:heroicons,
        github: "tailwindlabs/heroicons",
-       tag: "v2.1.1",
+       tag: "v2.2.0",
        sparse: "optimized",
        app: false,
        compile: false,
        depth: 1},
-      {:jason, "~> 1.2"},
-      {:nimble_csv, "~> 1.2.0"},
+      {:jason, "~> 1.4.0"},
+      {:meck, "~> 1.0.0", only: :test},
+      {:nimble_csv, "~> 1.3.0"},
       {:phoenix, "~> 1.7.14"},
-      {:phoenix_html, "~> 4.1"},
+      {:phoenix_html, "~> 4.2.0"},
       {:phoenix_live_dashboard, "~> 0.8.3"},
-      {:phoenix_live_reload, "~> 1.3", only: :dev},
+      {:phoenix_live_reload, "~> 1.6.0", only: :dev},
       {:phoenix_live_view, "~> 1.0.0", override: true},
-      {:swoosh, "~> 1.5"},
-      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
-      {:telemetry_metrics, "~> 1.0"},
-      {:telemetry_poller, "~> 1.0"},
-      {:meck, "~> 0.8.13", only: :test}
+      {:swoosh, "~> 1.19.0"},
+      {:tailwind, "~> 0.3.0", runtime: Mix.env() == :dev},
+      {:telemetry_metrics, "~> 1.1.0"},
+      {:telemetry_poller, "~> 1.3.0"}
     ]
   end
 
