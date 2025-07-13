@@ -133,8 +133,10 @@ jobs:
           key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-
+      - name: Compile without warnings
+        run: task build
       - name: Create PLTs
-        run: mix dialyzer --plt
+        run: task create_plt
       - name: Save PLT resource into cache
         id: cache-plt-save
         uses: actions/cache/save@v4

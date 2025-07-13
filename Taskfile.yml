@@ -27,6 +27,11 @@ tasks:
     cmds:
       - mix dialyzer --format github --format dialyxir
 
+  create_plt:
+    desc: "Create PLT for dialyzer"
+    cmds:
+      - mix dialyzer --plt
+
   deps:
     desc: "Install dependencies"
     cmds:
@@ -38,6 +43,7 @@ tasks:
       - task: build
       - task: check_format
       - task: check_credo
+      - task: create_plt
       - task: check_dialyzer
 
   prepare_system:
