@@ -22,12 +22,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Setup erlang/elixir runtimes
-        uses: erlef/setup-beam@v1
-        with:
-          version-file: .tool-versions
-          version-type: strict
-      - name: Cache dependencies and compiled build 
+      - name: Setup erlang/elixir/taskfile runtimes
+        uses: jdx/mise-action@v2
+      - name: Cache dependencies and compiled build
         id: cache-deps
         uses: actions/cache@v4
         env:
@@ -44,9 +41,9 @@ jobs:
         run: mix do deps.clean --all, clean
         shell: sh
       - name: Install dependencies
-        run: mix deps.get
+        run: task deps
       - name: Compile without warnings
-        run: mix compile --warnings-as-errors
+        run: task build
 
   format:
     name: Check code format
@@ -56,11 +53,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Setup erlang/elixir runtimes
-        uses: erlef/setup-beam@v1
-        with:
-          version-file: .tool-versions
-          version-type: strict
+      - name: Setup erlang/elixir/taskfile runtimes
+        uses: jdx/mise-action@v2
       - name: Restore deps/compiled build from cache
         id: cache-deps
         uses: actions/cache/restore@v4
@@ -74,7 +68,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
       - name: Check
-        run: mix format --check-formatted
+        run: task check_format
 
   credo:
     name: Check credo lint
@@ -83,11 +77,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Setup erlang/elixir runtimes
-        uses: erlef/setup-beam@v1
-        with:
-          version-file: .tool-versions
-          version-type: strict
+      - name: Setup erlang/elixir/taskfile runtimes
+        uses: jdx/mise-action@v2
       - name: Restore deps/compiled build from cache
         id: cache-deps
         uses: actions/cache/restore@v4
@@ -101,7 +92,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
       - name: Check
-        run: mix credo --strict
+        run: task check_credo
 
   dialyzer:
     name: Check dialyzer
@@ -110,11 +101,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Setup erlang/elixir runtimes
-        uses: erlef/setup-beam@v1
-        with:
-          version-file: .tool-versions
-          version-type: strict
+      - name: Setup erlang/elixir/taskfile runtimes
+        uses: jdx/mise-action@v2
       - name: Restore deps/compiled build from cache
         id: cache-deps
         uses: actions/cache/restore@v4
@@ -148,4 +136,4 @@ jobs:
           path: priv/plts
           key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
       - name: Check
-        run: mix dialyzer --format github --format dialyxir
+        run: task check_dialyzer
