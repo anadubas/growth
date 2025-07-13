@@ -22,8 +22,6 @@ defmodule Growth.CSVLoader do
   use GenServer
   alias NimbleCSV.RFC4180, as: CSV
 
-  @data_dir Application.app_dir(:growth, ["priv", "indicators"])
-
   @mapping %{
     "weight_for_age.csv" => :weight,
     "height_for_age.csv" => :height,
@@ -53,7 +51,10 @@ defmodule Growth.CSVLoader do
   end
 
   defp load_all do
-    Path.wildcard(Path.join(@data_dir, "*.csv"))
+    :growth
+    |> Application.app_dir(["priv", "indicators"])
+    |> Path.join("*.csv")
+    |> Path.wildcard()
     |> Enum.each(&load_csv_to_ets/1)
   end
 
