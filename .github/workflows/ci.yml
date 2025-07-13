@@ -133,6 +133,9 @@ jobs:
           key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-
+      - name: Clean up to avoida incremental build as source of flakiness
+        if: github.run_attempt != '1'
+        run: rm -rf priv/plts/*
       - name: Compile without warnings
         run: task build
       - name: Create PLTs
