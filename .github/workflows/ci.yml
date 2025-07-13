@@ -24,6 +24,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup erlang/elixir/taskfile runtimes
         uses: jdx/mise-action@v2
+      - name: Prepare system
+        run: task prepare_system
       - name: Cache dependencies and compiled build
         id: cache-deps
         uses: actions/cache@v4
@@ -55,6 +57,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup erlang/elixir/taskfile runtimes
         uses: jdx/mise-action@v2
+      - name: Prepare system
+        run: task prepare_system
       - name: Restore deps/compiled build from cache
         id: cache-deps
         uses: actions/cache/restore@v4
@@ -79,6 +83,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup erlang/elixir/taskfile runtimes
         uses: jdx/mise-action@v2
+      - name: Prepare system
+        run: task prepare_system
       - name: Restore deps/compiled build from cache
         id: cache-deps
         uses: actions/cache/restore@v4
@@ -103,6 +109,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup erlang/elixir/taskfile runtimes
         uses: jdx/mise-action@v2
+      - name: Prepare system
+        run: task prepare_system
       - name: Restore deps/compiled build from cache
         id: cache-deps
         uses: actions/cache/restore@v4

@@ -40,6 +40,11 @@ tasks:
       - task: check_credo
       - task: check_dialyzer
 
+  prepare_system:
+    desc: "Add rebar and hex"
+    cmds:
+      - mix do local.hex --force, local.rebar --force
+
   test:
     desc: "Run all tests"
     cmds:
