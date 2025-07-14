@@ -35,7 +35,7 @@ tasks:
   deps:
     desc: "Install dependencies"
     cmds:
-      - mix deps.get
+      - mix do deps.get, deps.compile
 
   lint:
     desc: "Run all linters"
@@ -55,3 +55,13 @@ tasks:
     desc: "Run all tests"
     cmds:
       - mix test --trace
+
+  assets_build:
+    desc: "Build assets"
+    cmds:
+      - mix assets.build
+
+  server:
+    desc: "Start the Phoenix server"
+    cmds:
+      - mix phx.server

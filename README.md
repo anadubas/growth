@@ -35,8 +35,12 @@ mise install
 To get the `elixir` dependencies, we can run:
 
 ```bash
+# Using mix
 mix do loca.rebar --force, local.hex --force
 mix do deps.get, deps.compile
+# Using taskfile
+task prepare_system
+task deps
 ```
 
 We also need to fetch the dependencies for the assets:
@@ -50,7 +54,11 @@ npm install --prefix ./assets
 The application can be compiled by running the following:
 
 ```bash
+# Using mix
 mix do assets.build, compile
+# Using taskfile
+task assets_build
+task compile
 ```
 
 ## Running the application
@@ -58,5 +66,8 @@ mix do assets.build, compile
 To start the application, run the following:
 
 ```bash
+# Using mix
 mix phx.server
+# Using taskfile
+task server
 ```
