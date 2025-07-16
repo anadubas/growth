@@ -13,6 +13,8 @@ services:
       watch:
         - path: ./
           action: rebuild
+    ports:
+      - '${GROWTH_PORT:-:4000}'
     environment:
       SECRET_KEY_BASE: '${GROWTH_SECRET_KEY_BASE:-mVrA1wyJvtAVp0hIgT2DnZMfyWh5dPltmEUWYVXN2yp8O742eTeL7sEe4NH9pskF}'
       PHX_HOST: '${GROWTH_PHX_HOST:-127.0.0.1}'
