@@ -56,6 +56,16 @@ tasks:
     cmds:
       - mix test --trace
 
+  test_single:
+    desc: "Run a single test file or test at specific line"
+    cmds:
+      - mix test {{.CLI_ARGS}}
+
+  format:
+    desc: "Format the code"
+    cmds:
+      - mix format
+
   assets_build:
     desc: "Build assets"
     cmds:
@@ -65,3 +75,9 @@ tasks:
     desc: "Start the Phoenix server"
     cmds:
       - mix phx.server
+
+  ci:
+    desc: "Run all checks (equivalent to mix ci)"
+    cmds:
+      - task: lint
+      - task: test
