@@ -1,0 +1,83 @@
+---
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - task --list
+    silent: true
+
+  build:
+    desc: "Compile the application"
+    cmds:
+      - mix compile --force --warnings-as-errors
+
+  check_format:
+    desc: "Check if the code is formatted"
+    cmds:
+      - mix format --check-formatted
+
+  check_credo:
+    desc: "Check if the code follows the Credo rules"
+    cmds:
+      - mix credo --strict
+
+  check_dialyzer:
+    desc: "Check if the code is linted"
+    cmds:
+      - mix dialyzer --format github --format dialyxir
+
+  create_plt:
+    desc: "Create PLT for dialyzer"
+    cmds:
+      - mix dialyzer --plt
+
+  deps:
+    desc: "Install dependencies"
+    cmds:
+      - mix do deps.get, deps.compile
+
+  lint:
+    desc: "Run all linters"
+    cmds:
+      - task: build
+      - task: check_format
+      - task: check_credo
+      - task: create_plt
+      - task: check_dialyzer
+
+  prepare_system:
+    desc: "Add rebar and hex"
+    cmds:
+      - mix do local.hex --force, local.rebar --force
+
+  test:
+    desc: "Run all tests"
+    cmds:
+      - mix test --trace
+
+  test_single:
+    desc: "Run a single test file or test at specific line"
+    cmds:
+      - mix test {{.CLI_ARGS}}
+
+  format:
+    desc: "Format the code"
+    cmds:
+      - mix format
+
+  assets_build:
+    desc: "Build assets"
+    cmds:
+      - mix assets.build
+
+  server:
+    desc: "Start the Phoenix server"
+    cmds:
+      - mix phx.server
+
+  ci:
+    desc: "Run all checks (equivalent to mix ci)"
+    cmds:
+      - task: lint
+      - task: test
