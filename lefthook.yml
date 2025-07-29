@@ -3,14 +3,23 @@ pre-commit:
   parallel: true
   commands:
     check-format:
+      glob: &files_to_check
+        - "lib/**/*.{ex,exs,heex}"
+        - "test/**/*.{ex,exs}"
+        - "config/**/*.exs"
+        - "mix.exs"
+        - "mix.lock"
       run: task check_format
     credo:
+      glob: *files_to_check
       run: task check_credo
     dialyzer:
+      glob: *files_to_check
       run: task check_dialyzer
 
 pre-push:
   parallel: true
   commands:
     test:
+      glob: *files_to_check
       run: task test
