@@ -26,6 +26,7 @@ defmodule Growth.Child do
   """
 
   alias Growth.Calculate
+  require :telemetry
 
   @type t :: %__MODULE__{
           name: String.t() | nil,
@@ -50,10 +51,22 @@ defmodule Growth.Child do
   """
   @spec new(map()) :: {:ok, t()}
   def new(attrs) do
-    attrs
-    |> create_struct()
-    |> add_measure_date()
-    |> add_age_in_months()
+    result =
+      attrs
+      |> create_struct()
+      |> add_measure_date()
+      |> add_age_in_months()
+
+    # Emit telemetry for successful child creation
+    case result do
+      {:ok, child} ->
+        :telemetry.execute([:growth, :child, :created], %{count: 1}, %{
+          age_in_months: child.age_in_months,
+          gender: child.gender
+        })
+
+        {:ok, child}
+    end
   end
 
   defp create_struct(attrs) do
