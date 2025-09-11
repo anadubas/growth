@@ -19,7 +19,7 @@ defmodule GrowthWeb.Telemetry do
 
     # Attach a logger for all our events.
     # This is useful for development and debugging.
-    :ok = :telemetry.attach_many("growth-logger", all_events(), &handle_event/4, nil)
+    :ok = attach_events()
 
     Supervisor.init(children, strategy: :one_for_one)
   end
@@ -92,7 +92,15 @@ defmodule GrowthWeb.Telemetry do
     ]
   end
 
-  # -- Private --
+  defp attach_events do
+    case Application.get_env(:growth, :env) do
+      :dev ->
+        :telemetry.attach_many("growth-logger", all_events(), &handle_event/4, nil)
+
+      _ ->
+        :ok
+    end
+  end
 
   defp all_events do
     [
