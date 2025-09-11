@@ -91,7 +91,6 @@ defmodule GrowthWeb.Telemetry do
       # {GrowthWeb, :count_users, []}
     ]
   end
-end
 
   # -- Private --
 
