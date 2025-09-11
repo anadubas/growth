@@ -33,13 +33,14 @@ defmodule Growth.LoadReference do
     end
   end
 
-  def load_data(data_type, %Growth.Child{gender: gender, age_in_months: age_in_months}) do
+  def load_data(data_type, %Growth.Child{gender: gender, age_in_months: age_in_months} = child) do
     :telemetry.span(
       [:growth, :reference_data, :load],
       %{
-        data_type: data_type,
+        age_in_months: age_in_months,
         child_gender: gender,
-        age_in_months: age_in_months
+        data_type: data_type,
+        measure_date: child.measure_date
       },
       fn ->
         key = {String.to_atom(gender), :month, age_in_months}

@@ -49,7 +49,11 @@ defmodule Growth.Calculate do
       ) do
     :telemetry.span(
       [:growth, :calculation],
-      %{child_age_in_months: child.age_in_months, child_gender: child.gender},
+      %{
+        age_in_months: child.age_in_months,
+        gender: child.gender,
+        measure_date: child.measure_date
+      },
       fn ->
         weight_result = calculate_result(weight, :weight, child)
         height_result = calculate_result(height, :height, child)
@@ -67,7 +71,7 @@ defmodule Growth.Calculate do
 
         measure = %Measure{growth | results: result}
 
-        {measure,
+        {measure, %{count: 1},
          %{
            has_weight_result: weight_result != "no results",
            has_height_result: height_result != "no results",
@@ -96,11 +100,12 @@ defmodule Growth.Calculate do
   def calculate_result(measure, data_type, %Child{} = child)
       when is_number(measure) do
     :telemetry.span(
-      [:growth, :calculation, data_type],
+      [:growth, :calculation, :measure],
       %{
-        data_type: data_type,
+        age_in_months: child.age_in_months,
         child_gender: child.gender,
-        age_in_months: child.age_in_months
+        measure_date: child.measure_date,
+        data_type: data_type
       },
       fn ->
         case LoadReference.load_data(data_type, child) do

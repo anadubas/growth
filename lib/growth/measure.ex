@@ -56,28 +56,26 @@ defmodule Growth.Measure do
   Create a measure result for a child
   """
   @spec new(map(), Child.t()) :: {:ok, t()}
-  def new(attrs, child) do
-    result =
+  def new(%{} = attrs, %Child{} = child) do
+    {:ok, measure} =
       attrs
       |> create_struct(child)
       |> add_bmi()
       |> add_results(child)
 
-    # Emit telemetry for successful measure creation
-    case result do
-      {:ok, measure} ->
-        :telemetry.execute([:growth, :measure, :submitted], %{count: 1}, %{
-          child_age_in_months: child.age_in_months,
-          has_weight: not is_nil(measure.weight),
-          has_height: not is_nil(measure.height),
-          has_head_circumference: not is_nil(measure.head_circumference)
-        })
+    :telemetry.execute([:growth, :measure, :submitted], %{count: 1}, %{
+      age_in_months: child.age_in_months,
+      gender: child.gender,
+      measure_date: child.measure_date,
+      has_weight: not is_nil(measure.weight),
+      has_height: not is_nil(measure.height),
+      has_head_circumference: not is_nil(measure.head_circumference)
+    })
 
-        {:ok, measure}
-    end
+    {:ok, measure}
   end
 
-  defp create_struct(attrs, child) do
+  defp create_struct(%{} = attrs, %Child{} = child) do
     %__MODULE__{
       height: attrs.height,
       weight: attrs.weight,
