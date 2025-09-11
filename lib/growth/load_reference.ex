@@ -47,11 +47,27 @@ defmodule Growth.LoadReference do
 
         case :ets.lookup(data_type, key) do
           [{^key, value}] ->
-            {{:ok, value}, %{success: true}}
+            {{:ok, value},
+             %{
+               age_in_months: age_in_months,
+               child_gender: gender,
+               data_type: data_type,
+               measure_date: child.measure_date,
+               success: true
+             }}
 
           [] ->
             reason = "Data not found for #{inspect(key)} in #{inspect(data_type)}"
-            {{:error, reason}, %{success: false, reason: reason}}
+
+            {{:error, reason},
+             %{
+               age_in_months: age_in_months,
+               child_gender: gender,
+               data_type: data_type,
+               measure_date: child.measure_date,
+               success: false,
+               reason: reason
+             }}
         end
       end
     )

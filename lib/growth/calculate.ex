@@ -73,10 +73,13 @@ defmodule Growth.Calculate do
 
         {measure, %{count: 1},
          %{
+           age_in_months: child.age_in_months,
+           child_gender: child.gender,
            has_weight_result: weight_result != "no results",
            has_height_result: height_result != "no results",
            has_bmi_result: bmi_result != "no results",
            has_head_circumference_result: head_circumference_result != "no results",
+           measure_date: child.measure_date,
            success: true
          }}
       end
@@ -116,10 +119,24 @@ defmodule Growth.Calculate do
               |> add_percentile()
               |> format_result()
 
-            {result, %{success: true}}
+            {result,
+             %{
+               age_in_months: child.age_in_months,
+               child_gender: child.gender,
+               measure_date: child.measure_date,
+               data_type: data_type,
+               success: true
+             }}
 
           {:error, _} ->
-            {"no data found", %{success: false}}
+            {"no data found",
+             %{
+               age_in_months: child.age_in_months,
+               child_gender: child.gender,
+               measure_date: child.measure_date,
+               data_type: data_type,
+               success: false
+             }}
         end
       end
     )
