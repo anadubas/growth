@@ -51,6 +51,26 @@ defmodule GrowthWeb.Telemetry do
         unit: {:native, :millisecond}
       ),
 
+      # == Growth Metrics ==
+
+      # User Journey Events
+      counter("growth.child.created.count"),
+      counter("growth.measure.submitted.count"),
+
+      # Business Logic Span Events
+      summary("growth.calculation.stop.duration",
+        unit: {:native, :millisecond}
+      ),
+      counter("growth.calculation.stop.count"),
+      summary("growth.calculation.measure.stop.duration",
+        # tags: [:data_type, :success],
+        unit: {:native, :millisecond}
+      ),
+      summary("growth.reference_data.load.stop.duration",
+        # tags: [:data_type, :success],
+        unit: {:native, :millisecond}
+      ),
+
       # VM Metrics
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),
