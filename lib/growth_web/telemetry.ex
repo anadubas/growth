@@ -1,6 +1,7 @@
 defmodule GrowthWeb.Telemetry do
   use Supervisor
   import Telemetry.Metrics
+  require Logger
 
   def start_link(arg) do
     Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
@@ -15,6 +16,10 @@ defmodule GrowthWeb.Telemetry do
       # Add reporters as children of your supervision tree.
       # {Telemetry.Metrics.ConsoleReporter, metrics: metrics()}
     ]
+
+    # Attach a logger for all our events.
+    # This is useful for development and debugging.
+    :ok = :telemetry.attach_many("growth-logger", all_events(), &handle_event/4, nil)
 
     Supervisor.init(children, strategy: :one_for_one)
   end
@@ -85,5 +90,31 @@ defmodule GrowthWeb.Telemetry do
       # This function must call :telemetry.execute/3 and a metric must be added above.
       # {GrowthWeb, :count_users, []}
     ]
+  end
+end
+
+  # -- Private --
+
+  defp all_events do
+    [
+      # User Journey
+      [:growth, :child, :created],
+      [:growth, :measure, :submitted],
+      # [:growth, :results, :viewed],
+      # [:growth, :form, :reset],
+      # Spans (start, stop, exception)
+      [:growth, :calculation, :start],
+      [:growth, :calculation, :stop],
+      [:growth, :calculation, :measure, :start],
+      [:growth, :calculation, :measure, :stop],
+      [:growth, :reference_data, :load, :start],
+      [:growth, :reference_data, :load, :stop]
+    ]
+  end
+
+  defp handle_event(event, measurements, metadata, _config) do
+    Logger.info("[Telemetry] #{inspect(event)}
+  Measurements: #{inspect(measurements)}
+  Metadata: #{inspect(metadata)}")
   end
 end
