@@ -96,20 +96,20 @@ The application emits telemetry events to monitor user interactions and business
 
 * `[:growth, :calculation, :stop]` - Emitted when growth calculation process completes
   - **Measurements**: `%{duration: native_time(), count: 1, monotonic_time: integer()}`
-  - **Metadata**: `%{age_in_months: integer(), child_gender: String.t(), measure_date: Date.t(), has_weight_result: boolean(), has_height_result: boolean(), has_bmi_result: boolean(), has_head_circumference_result: boolean(), success: boolean()}`
+  - **Metadata**: `%{age_in_months: integer(), gender: String.t(), measure_date: Date.t(), has_weight_result: boolean(), has_height_result: boolean(), has_bmi_result: boolean(), has_head_circumference_result: boolean(), success: boolean()}`
 
 * `[:growth, :calculation, :measure, :start]` - Emitted when individual measurement calculation begins
   - **Measurements**: `%{monotonic_time: integer()}`
-  - **Metadata**: `%{age_in_months: number(), child_gender: String.t(), measure_date: Date.t(), data_type: atom()}`
+  - **Metadata**: `%{age_in_months: number(), gender: String.t(), measure_date: Date.t(), data_type: atom()}`
 
 * `[:growth, :calculation, :measure, :stop]` - Emitted when individual measurement calculation completes
   - **Measurements**: `%{duration: native_time(), monotonic_time: integer()}`
-  - **Metadata**: `%{age_in_months: number(), child_gender: String.t(), measure_date: Date.t(), data_type: atom(), success: boolean()}`
+  - **Metadata**: `%{age_in_months: number(), gender: String.t(), measure_date: Date.t(), data_type: atom(), success: boolean()}`
 
 * `[:growth, :reference_data, :load, :start]` - Emitted when reference data loading begins
   - **Measurements**: `%{monotonic_time: integer()}`
-  - **Metadata**: `%{age_in_months: number(), child_gender: String.t(), data_type: atom(), measure_date: Date.t()}`
+  - **Metadata**: `%{age_in_months: number(), gender: String.t(), data_type: atom(), measure_date: Date.t()}`
 
 * `[:growth, :reference_data, :load, :stop]` - Emitted when reference data loading completes
   - **Measurements**: `%{duration: native_time(), monotonic_time: integer()}`
-  - **Metadata**: `%{age_in_months: number(), child_gender: String.t(), data_type: atom(), measure_date: Date.t(), success: boolean(), reason: String.t() | nil}`
+  - **Metadata**: `%{age_in_months: number(), gender: String.t(), data_type: atom(), measure_date: Date.t(), success: boolean(), reason: String.t() | nil}`
