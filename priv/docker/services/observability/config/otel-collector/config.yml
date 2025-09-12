@@ -1,0 +1,78 @@
+---
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 100
+
+  resource:
+    attributes:
+      - key: service.name
+        value: "growth-app"
+        action: insert
+      - key: deployment.environment
+        value: "local"
+        action: insert
+
+exporters:
+  # Export to Uptrace
+  otlp/uptrace:
+    # The OTLP gRPC endpoint for Uptrace is 14319. Port 14317 is for the UI.
+    endpoint: uptrace:14319
+    headers:
+      # This DSN is likely a placeholder. Replace with your actual Uptrace DSN.
+      uptrace-dsn: "http://localhost:14317/2"
+    tls:
+      insecure: true
+
+  # Export to SigNoz
+  otlp/signoz:
+    endpoint: signoz:4317
+    tls:
+      insecure: true
+
+  # Export to OpenObserve
+  otlp/openobserve:
+    # The OTLP gRPC endpoint for OpenObserve was set to 5317 in docker-compose.yml.
+    endpoint: openobserve:5317
+    headers:
+      # Basic auth credentials for OpenObserve (admin@example.com:admin123)
+      Authorization: "Basic YWRtaW5AZXhhbXBsZS5jb206YWRtaW4xMjM="
+      # Optional: specify a stream name for OpenObserve.
+      stream-name: "growth-app"
+    tls:
+      insecure: true
+
+  # Debug exporter for local development
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [otlp/uptrace, otlp/signoz, otlp/openobserve, debug]
+
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [otlp/uptrace, otlp/signoz, otlp/openobserve, debug]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      # Sending logs to all backends that support them.
+      exporters: [otlp/uptrace, otlp/signoz, otlp/openobserve, debug]

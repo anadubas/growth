@@ -1,0 +1,98 @@
+---
+services:
+  clickhouse:
+    image: "clickhouse/clickhouse-server:25.8.2.29-alpine"
+    hostname: clickhouse
+    restart: unless-stopped
+    profiles:
+      - observability
+      - clickhouse
+      - uptrace
+      - signoz
+    ports:
+      - "8123:8123" # HTTP interface
+      - "9000:9000" # Native TCP interface
+    environment:
+      CLICKHOUSE_DB: signoz
+      CLICKHOUSE_USER: &clickhouse_user default
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      # Note: The default user has an empty password.
+      # For production, set CLICKHOUSE_PASSWORD and update dependent services.
+      CLICKHOUSE_PASSWORD: &clickhouse_password ${GROWTH_O11Y_CLICKHOUSE_PASSWORD:-""}
+    volumes:
+      - "clickhouse_data:/var/lib/clickhouse"
+    networks:
+      - observability
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  signoz:
+    image: "signoz/signoz:v0.94.0"
+    hostname: signoz
+    restart: unless-stopped
+    profiles:
+      - observability
+      - signoz
+    ports:
+      - "3301:3301" # Signoz UI
+      - "9001:9001" # Signoz API (Query Service)
+      # OTLP ports (4317, 4318) are not exposed to the host to avoid conflict
+      # with the otel-collector. The collector will forward data to SigNoz
+      # on the internal network at signoz:4317 (gRPC) and signoz:4318 (HTTP).
+    environment:
+      SIGNOZ_TELEMETRY_ENABLED: "false"
+      STORAGE: clickhouse
+      CLICKHOUSE_URL: "http://clickhouse:8123"
+      CLICKHOUSE_USER: *clickhouse_user
+      CLICKHOUSE_PASSWORD: *clickhouse_password
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    volumes:
+      - signoz_data:/var/lib/signoz
+    networks:
+      - observability
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3301/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  otel-collector:
+    image: "otel/opentelemetry-collector-contrib:0.134.1"
+    hostname: otel-collector
+    restart: unless-stopped
+    profiles:
+      - observability
+      - otel-collector
+      - uptrace
+      - signoz
+      - openobserve
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    ports:
+      - "4317:4317" # OTLP gRPC (from application)
+      - "4318:4318" # OTLP HTTP (from application)
+      - "8888:8888" # Health check and metrics endpoint
+      - "8889:8889" # Prometheus metrics
+    volumes:
+      - "./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro"
+    depends_on:
+      uptrace:
+        condition: service_healthy
+      signoz:
+        condition: service_healthy
+      openobserve:
+        condition: service_started
+    networks:
+      - observability
+
+volumes:
+  clickhouse_data: {}
+  signoz_data: {}
+
+networks:
+  observability:
+    driver: bridge
