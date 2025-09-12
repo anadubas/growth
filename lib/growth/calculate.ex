@@ -74,11 +74,11 @@ defmodule Growth.Calculate do
         {measure, %{count: 1},
          %{
            age_in_months: child.age_in_months,
-           child_gender: child.gender,
-           has_weight_result: weight_result != "no results",
-           has_height_result: height_result != "no results",
+           gender: child.gender,
            has_bmi_result: bmi_result != "no results",
            has_head_circumference_result: head_circumference_result != "no results",
+           has_height_result: height_result != "no results",
+           has_weight_result: weight_result != "no results",
            measure_date: child.measure_date,
            success: true
          }}
@@ -106,7 +106,7 @@ defmodule Growth.Calculate do
       [:growth, :calculation, :measure],
       %{
         age_in_months: child.age_in_months,
-        child_gender: child.gender,
+        gender: child.gender,
         measure_date: child.measure_date,
         data_type: data_type
       },
@@ -122,9 +122,9 @@ defmodule Growth.Calculate do
             {result,
              %{
                age_in_months: child.age_in_months,
-               child_gender: child.gender,
-               measure_date: child.measure_date,
                data_type: data_type,
+               gender: child.gender,
+               measure_date: child.measure_date,
                success: true
              }}
 
@@ -132,9 +132,9 @@ defmodule Growth.Calculate do
             {"no data found",
              %{
                age_in_months: child.age_in_months,
-               child_gender: child.gender,
-               measure_date: child.measure_date,
                data_type: data_type,
+               gender: child.gender,
+               measure_date: child.measure_date,
                success: false
              }}
         end

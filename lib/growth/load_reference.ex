@@ -38,7 +38,7 @@ defmodule Growth.LoadReference do
       [:growth, :reference_data, :load],
       %{
         age_in_months: age_in_months,
-        child_gender: gender,
+        gender: gender,
         data_type: data_type,
         measure_date: child.measure_date
       },
@@ -50,7 +50,7 @@ defmodule Growth.LoadReference do
             {{:ok, value},
              %{
                age_in_months: age_in_months,
-               child_gender: gender,
+               gender: gender,
                data_type: data_type,
                measure_date: child.measure_date,
                success: true
