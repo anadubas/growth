@@ -14,6 +14,7 @@ defmodule Growth.Calculate do
   alias Growth.LoadReference
   alias Growth.Measure
   alias Growth.Zscore
+  require :telemetry
 
   @days_in_month 30.4375
 
@@ -46,21 +47,43 @@ defmodule Growth.Calculate do
           growth,
         %Child{} = child
       ) do
-    weight_result = calculate_result(weight, :weight, child)
-    height_result = calculate_result(height, :height, child)
-    bmi_result = calculate_result(bmi, :bmi, child)
+    :telemetry.span(
+      [:growth, :calculation],
+      %{
+        age_in_months: child.age_in_months,
+        gender: child.gender,
+        measure_date: child.measure_date
+      },
+      fn ->
+        weight_result = calculate_result(weight, :weight, child)
+        height_result = calculate_result(height, :height, child)
+        bmi_result = calculate_result(bmi, :bmi, child)
 
-    head_circumference_result =
-      calculate_result(head_circumference, :head_circumference, child)
+        head_circumference_result =
+          calculate_result(head_circumference, :head_circumference, child)
 
-    result = %{
-      weight_result: weight_result,
-      height_result: height_result,
-      head_circumference_result: head_circumference_result,
-      bmi_result: bmi_result
-    }
+        result = %{
+          weight_result: weight_result,
+          height_result: height_result,
+          head_circumference_result: head_circumference_result,
+          bmi_result: bmi_result
+        }
 
-    %Measure{growth | results: result}
+        measure = %Measure{growth | results: result}
+
+        {measure, %{count: 1},
+         %{
+           age_in_months: child.age_in_months,
+           gender: child.gender,
+           has_bmi_result: bmi_result != "no results",
+           has_head_circumference_result: head_circumference_result != "no results",
+           has_height_result: height_result != "no results",
+           has_weight_result: weight_result != "no results",
+           measure_date: child.measure_date,
+           success: true
+         }}
+      end
+    )
   end
 
   @doc """
@@ -79,16 +102,44 @@ defmodule Growth.Calculate do
   @spec calculate_result(number(), atom(), Child.t()) :: map() | String.t()
   def calculate_result(measure, data_type, %Child{} = child)
       when is_number(measure) do
-    case LoadReference.load_data(data_type, child) do
-      {:ok, data} ->
-        data
-        |> add_zscore(measure)
-        |> add_percentile()
-        |> format_result()
+    :telemetry.span(
+      [:growth, :calculation, :measure],
+      %{
+        age_in_months: child.age_in_months,
+        gender: child.gender,
+        measure_date: child.measure_date,
+        data_type: data_type
+      },
+      fn ->
+        case LoadReference.load_data(data_type, child) do
+          {:ok, data} ->
+            result =
+              data
+              |> add_zscore(measure)
+              |> add_percentile()
+              |> format_result()
 
-      {:error, _} ->
-        "no data found"
-    end
+            {result,
+             %{
+               age_in_months: child.age_in_months,
+               data_type: data_type,
+               gender: child.gender,
+               measure_date: child.measure_date,
+               success: true
+             }}
+
+          {:error, _} ->
+            {"no data found",
+             %{
+               age_in_months: child.age_in_months,
+               data_type: data_type,
+               gender: child.gender,
+               measure_date: child.measure_date,
+               success: false
+             }}
+        end
+      end
+    )
   end
 
   def calculate_result(_age_in_months, _data_type, _child) do

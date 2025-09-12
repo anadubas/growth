@@ -71,3 +71,45 @@ mix phx.server
 # Using taskfile
 task server
 ```
+
+### Telemetry
+
+The application emits telemetry events to monitor user interactions and business logic performance. These events can be used for observability, monitoring, and debugging purposes.
+
+#### Events
+
+##### User Journey Events
+
+* `[:growth, :child, :created]` - Emitted when a new child profile is created
+  - **Measurements**: `%{count: 1}`
+  - **Metadata**: `%{age_in_months: number(), gender: String.t(), measure_date: Date.t()}`
+
+* `[:growth, :measure, :submitted]` - Emitted when anthropometric measurements are submitted for a child
+  - **Measurements**: `%{count: 1}`
+  - **Metadata**: `%{age_in_months: number(), gender: String.t(), measure_date: Date.t(), has_weight: boolean(), has_height: boolean(), has_head_circumference: boolean()}`
+
+##### Business Logic Span Events
+
+* `[:growth, :calculation, :start]` - Emitted when growth calculation process begins
+  - **Measurements**: `%{monotonic_time: integer()}`
+  - **Metadata**: `%{age_in_months: integer(), gender: String.t(), measure_date: Date.t()}`
+
+* `[:growth, :calculation, :stop]` - Emitted when growth calculation process completes
+  - **Measurements**: `%{duration: native_time(), count: 1, monotonic_time: integer()}`
+  - **Metadata**: `%{age_in_months: integer(), gender: String.t(), measure_date: Date.t(), has_weight_result: boolean(), has_height_result: boolean(), has_bmi_result: boolean(), has_head_circumference_result: boolean(), success: boolean()}`
+
+* `[:growth, :calculation, :measure, :start]` - Emitted when individual measurement calculation begins
+  - **Measurements**: `%{monotonic_time: integer()}`
+  - **Metadata**: `%{age_in_months: number(), gender: String.t(), measure_date: Date.t(), data_type: atom()}`
+
+* `[:growth, :calculation, :measure, :stop]` - Emitted when individual measurement calculation completes
+  - **Measurements**: `%{duration: native_time(), monotonic_time: integer()}`
+  - **Metadata**: `%{age_in_months: number(), gender: String.t(), measure_date: Date.t(), data_type: atom(), success: boolean()}`
+
+* `[:growth, :reference_data, :load, :start]` - Emitted when reference data loading begins
+  - **Measurements**: `%{monotonic_time: integer()}`
+  - **Metadata**: `%{age_in_months: number(), gender: String.t(), data_type: atom(), measure_date: Date.t()}`
+
+* `[:growth, :reference_data, :load, :stop]` - Emitted when reference data loading completes
+  - **Measurements**: `%{duration: native_time(), monotonic_time: integer()}`
+  - **Metadata**: `%{age_in_months: number(), gender: String.t(), data_type: atom(), measure_date: Date.t(), success: boolean(), reason: String.t() | nil}`

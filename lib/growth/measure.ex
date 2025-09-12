@@ -32,6 +32,7 @@ defmodule Growth.Measure do
 
   alias Growth.Calculate
   alias Growth.Child
+  require :telemetry
 
   @type t :: %__MODULE__{
           height: number() | nil,
@@ -55,14 +56,26 @@ defmodule Growth.Measure do
   Create a measure result for a child
   """
   @spec new(map(), Child.t()) :: {:ok, t()}
-  def new(attrs, child) do
-    attrs
-    |> create_struct(child)
-    |> add_bmi()
-    |> add_results(child)
+  def new(%{} = attrs, %Child{} = child) do
+    {:ok, measure} =
+      attrs
+      |> create_struct(child)
+      |> add_bmi()
+      |> add_results(child)
+
+    :telemetry.execute([:growth, :measure, :submitted], %{count: 1}, %{
+      age_in_months: child.age_in_months,
+      gender: child.gender,
+      measure_date: child.measure_date,
+      has_weight: not is_nil(measure.weight),
+      has_height: not is_nil(measure.height),
+      has_head_circumference: not is_nil(measure.head_circumference)
+    })
+
+    {:ok, measure}
   end
 
-  defp create_struct(attrs, child) do
+  defp create_struct(%{} = attrs, %Child{} = child) do
     %__MODULE__{
       height: attrs.height,
       weight: attrs.weight,

@@ -13,6 +13,7 @@ defmodule Growth.LoadReference do
   - `:bmi` — BMI-for-age reference
   - `:head_circumference` — Head circumference-for-age reference
   """
+  require :telemetry
 
   @doc """
   Loads a reference data row from the ETS table for a given measurement type and child.
@@ -32,15 +33,43 @@ defmodule Growth.LoadReference do
     end
   end
 
-  def load_data(data_type, %Growth.Child{gender: gender, age_in_months: age_in_months}) do
-    key = {String.to_atom(gender), :month, age_in_months}
+  def load_data(data_type, %Growth.Child{gender: gender, age_in_months: age_in_months} = child) do
+    :telemetry.span(
+      [:growth, :reference_data, :load],
+      %{
+        age_in_months: age_in_months,
+        gender: gender,
+        data_type: data_type,
+        measure_date: child.measure_date
+      },
+      fn ->
+        key = {String.to_atom(gender), :month, age_in_months}
 
-    case :ets.lookup(data_type, key) do
-      [{^key, value}] ->
-        {:ok, value}
+        case :ets.lookup(data_type, key) do
+          [{^key, value}] ->
+            {{:ok, value},
+             %{
+               age_in_months: age_in_months,
+               gender: gender,
+               data_type: data_type,
+               measure_date: child.measure_date,
+               success: true
+             }}
 
-      [] ->
-        {:error, "Data not found for #{inspect(key)} in #{inspect(data_type)}"}
-    end
+          [] ->
+            reason = "Data not found for #{inspect(key)} in #{inspect(data_type)}"
+
+            {{:error, reason},
+             %{
+               age_in_months: age_in_months,
+               child_gender: gender,
+               data_type: data_type,
+               measure_date: child.measure_date,
+               success: false,
+               reason: reason
+             }}
+        end
+      end
+    )
   end
 end
