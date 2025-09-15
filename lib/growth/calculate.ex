@@ -26,6 +26,29 @@ defmodule Growth.Calculate do
     |> floor()
   end
 
+  @spec in_days(%{
+          :calendar => atom(),
+          :day => any(),
+          :month => any(),
+          :year => any(),
+          optional(any()) => any()
+        }) :: integer()
+  def in_days(birthday, date \\ Date.utc_today()) do
+    Date.diff(date, birthday)
+  end
+
+  @spec in_months_decimal(%{
+          :calendar => atom(),
+          :day => any(),
+          :month => any(),
+          :year => any(),
+          optional(any()) => any()
+        }) :: float()
+  def in_months_decimal(birthday, date \\ Date.utc_today()) do
+    days = in_days(birthday, date)
+    Float.round(days / 30.4375, 2)
+  end
+
   @spec bmi(number(), number()) :: number()
   def bmi(weight, height) do
     weight / :math.pow(height / 100.0, 2)
@@ -84,6 +107,16 @@ defmodule Growth.Calculate do
          }}
       end
     )
+
+    %Measure{
+      growth
+      | results: %{
+          weight: calculate_result(weight, :weight, child),
+          height: calculate_result(height, :height, child),
+          head_circumference: calculate_result(head_circumference, :head_circumference, child),
+          bmi: calculate_result(bmi, :bmi, child)
+        }
+    }
   end
 
   @doc """
@@ -112,12 +145,16 @@ defmodule Growth.Calculate do
       },
       fn ->
         case LoadReference.load_data(data_type, child) do
-          {:ok, data} ->
-            result =
-              data
-              |> add_zscore(measure)
-              |> add_percentile()
-              |> format_result()
+          {:ok, %{l: l, m: m, s: s} = data} ->
+            z = Zscore.calculate(measure, l, m, s)
+            p = to_percentile(z)
+
+            data
+            |> Map.merge(%{
+              zscore: z,
+              percentile: p,
+              classification: classify(z, data_type)
+            })
 
             {result,
              %{
@@ -142,8 +179,49 @@ defmodule Growth.Calculate do
     )
   end
 
-  def calculate_result(_age_in_months, _data_type, _child) do
-    "no results"
+  def calculate_result(_measure, _data_type, _child), do: "no results"
+
+  defp to_percentile(z) do
+    # converte escore-z em percentil (0..100)
+    prob = 0.5 * (1.0 + :math.erf(z / :math.sqrt(2)))
+    Float.round(prob * 100.0, 2)
+  end
+
+  defp classify(z, :weight) do
+    cond do
+      z < -3 -> "Baixo peso grave"
+      z < -2 -> "Baixo peso"
+      z <= 2 -> "Eutrófico"
+      z <= 3 -> "Sobrepeso"
+      true -> "Obesidade"
+    end
+  end
+
+  defp classify(z, :height) do
+    cond do
+      z < -3 -> "Muito baixa estatura"
+      z < -2 -> "Baixa estatura"
+      true -> "Estatura adequada"
+    end
+  end
+
+  defp classify(z, :bmi) do
+    cond do
+      z < -3 -> "Magreza acentuada"
+      z < -2 -> "Magreza"
+      z <= 1 -> "Eutrofia"
+      z <= 2 -> "Sobrepeso"
+      z <= 3 -> "Obesidade"
+      true -> "Obesidade grave"
+    end
+  end
+
+  defp classify(z, :head_circumference) do
+    cond do
+      z < -2 -> "Microcefalia"
+      z > 2 -> "Macrocefalia"
+      true -> "Normal"
+    end
   end
 
   defp add_zscore(%{l: l, m: m, s: s} = data, measure) do

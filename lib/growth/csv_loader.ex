@@ -88,7 +88,7 @@ defmodule Growth.CSVLoader do
 
   defp store_in_ets(data, table) do
     Enum.each(data, fn row ->
-      gender = String.to_atom(row["gender"])
+      gender = get_gender(row["gender"])
       age = String.to_integer(row["age"])
       key = {gender, :month, age}
 
@@ -121,4 +121,7 @@ defmodule Growth.CSVLoader do
       _ -> nil
     end
   end
+
+  defp get_gender("female"), do: :female
+  defp get_gender("male"), do: :male
 end

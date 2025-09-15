@@ -27,8 +27,8 @@ defmodule Growth.LoadReference do
     - `{:error, reason}` if the data is invalid or not found.
   """
   @spec load_data(atom(), Growth.Child.t()) :: {:ok, map()} | {:error, String.t()}
-  def load_data(data_type, %Growth.Child{gender: _gender, age_in_months: nil} = child) do
-    with {:ok, updated_child} <- Growth.Child.add_age_in_months(child) do
+  def load_data(data_type, %Growth.Child{gender: _gender, age_in_decimal: nil} = child) do
+    with {:ok, updated_child} <- Growth.Child.add_age_in_decimal(child) do
       load_data(data_type, updated_child)
     end
   end
@@ -71,5 +71,38 @@ defmodule Growth.LoadReference do
         end
       end
     )
+  end
+
+  defp get_reference(data_type, gender, age_in_months) do
+    case :ets.lookup(data_type, {gender, :month, age_in_months}) do
+      [{{^gender, :month, ^age_in_months}, data}] -> {:ok, data}
+      [] -> {:error, "reference not found for #{data_type}, #{gender}, age #{age_in_months}"}
+    end
+  end
+
+  defp ets_table_name(data_type, gender) do
+    :"#{data_type}_#{gender}_ref"
+  end
+
+  defp interpolate(lower_ref, upper_ref, fraction) do
+    keys = [:l, :m, :s, :sd0, :sd1, :sd2, :sd3, :sd1neg, :sd2neg, :sd3neg]
+
+    interpolated =
+      Enum.reduce(keys, %{}, fn key, acc ->
+        v_lower = Map.get(lower_ref, key)
+        v_upper = Map.get(upper_ref, key)
+
+        # linear interpolation
+        value =
+          if is_number(v_lower) and is_number(v_upper) do
+            v_lower + (v_upper - v_lower) * fraction
+          else
+            nil
+          end
+
+        Map.put(acc, key, value)
+      end)
+
+    {:ok, interpolated}
   end
 end
