@@ -103,4 +103,10 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+
+  config :growth, Growth.PromEx,
+    disabled: false,
+    manua_metrics_start_delay: :no_delay,
+    grafana: :disabled,
+    metrics_server: :disabled
 end
