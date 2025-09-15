@@ -35,14 +35,14 @@ defmodule Growth.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:bandit, "~> 1.7.0"},
+      {:bandit, "~> 1.8.0"},
       {:credo, "~> 1.7.10"},
       {:dns_cluster, "~> 0.2.0"},
       {:dialyxir, "~> 1.4.5", only: [:test, :dev], runtime: false},
       {:esbuild, "~> 0.10.0", runtime: Mix.env() == :dev},
       {:finch, "~> 0.20.0"},
       {:floki, "~> 0.38.0", only: :test},
-      {:gettext, "~> 0.26.0"},
+      {:gettext, "~> 1.0.0"},
       {:heroicons,
        github: "tailwindlabs/heroicons",
        tag: "v2.2.0",
@@ -52,13 +52,13 @@ defmodule Growth.MixProject do
        depth: 1},
       {:jason, "~> 1.4.0"},
       {:nimble_csv, "~> 1.3.0"},
-      {:phoenix, "~> 1.7.14"},
+      {:phoenix, "~> 1.8.1"},
       {:phoenix_html, "~> 4.2.0"},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:phoenix_live_reload, "~> 1.6.0", only: :dev},
-      {:phoenix_live_view, "~> 1.0.0", override: true},
+      {:phoenix_live_view, "~> 1.1.0", override: true},
       {:swoosh, "~> 1.19.0"},
-      {:tailwind, "~> 0.3.0", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.4.0", runtime: Mix.env() == :dev},
       {:telemetry_metrics, "~> 1.1.0"},
       {:telemetry_poller, "~> 1.3.0"}
     ]
