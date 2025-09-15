@@ -1,7 +1,7 @@
 ARG ELIXIR_VERSION=1.18.4
-ARG OTP_VERSION=28.0.1
-ARG DEBIAN_VERSION=bookworm-20250630-slim
-ARG NODE_VERSION=24.4.1-bookworm-slim
+ARG OTP_VERSION=28.0.4
+ARG DEBIAN_VERSION=trixie-20250908-slim
+ARG NODE_VERSION=24.8.0-trixie-slim
 ARG ASSETS_IMAGE="node:${NODE_VERSION}"
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -39,7 +39,7 @@ RUN mix release
 FROM ${RUNNER_IMAGE}
 RUN apt-get update -y \
   && apt-get install -y \
-    libncurses5 \
+    libncurses6 \
     libstdc++6 \
     locales ca-certificates \
     openssl \
