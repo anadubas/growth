@@ -51,6 +51,7 @@ defmodule Growth.MixProject do
        compile: false,
        depth: 1},
       {:jason, "~> 1.4.0"},
+      {:logger_json, "~> 7.0.0"},
       {:nimble_csv, "~> 1.3.0"},
       {:phoenix, "~> 1.8.1"},
       {:phoenix_html, "~> 4.2.0"},
