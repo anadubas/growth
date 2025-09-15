@@ -58,6 +58,7 @@ defmodule Growth.MixProject do
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:phoenix_live_reload, "~> 1.6.0", only: :dev},
       {:phoenix_live_view, "~> 1.1.0", override: true},
+      {:prom_ex, "~> 1.11.0"},
       {:swoosh, "~> 1.19.0"},
       {:tailwind, "~> 0.4.0", runtime: Mix.env() == :dev},
       {:telemetry_metrics, "~> 1.1.0"},

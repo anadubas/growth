@@ -8,6 +8,7 @@ defmodule Growth.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      Growth.PromEx,
       GrowthWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:growth, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Growth.PubSub},
