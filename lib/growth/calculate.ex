@@ -147,7 +147,7 @@ defmodule Growth.Calculate do
       },
       fn ->
         case LoadReference.load_data(data_type, child) do
-          {:ok, %{l: l, m: m, s: s} = data} ->
+          {:ok, data} ->
             result =
               data
               |> add_zscore(measure)
