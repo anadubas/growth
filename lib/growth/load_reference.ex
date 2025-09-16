@@ -43,10 +43,8 @@ defmodule Growth.LoadReference do
         measure_date: child.measure_date
       },
       fn ->
-        key = {String.to_atom(gender), :month, age_in_months}
-
-        case :ets.lookup(data_type, key) do
-          [{^key, value}] ->
+        case get_reference(data_type, gender, age_in_months) do
+          {:ok, value} ->
             {{:ok, value},
              %{
                age_in_months: age_in_months,
@@ -56,9 +54,7 @@ defmodule Growth.LoadReference do
                success: true
              }}
 
-          [] ->
-            reason = "Data not found for #{inspect(key)} in #{inspect(data_type)}"
-
+          {:error, reason} ->
             {{:error, reason},
              %{
                age_in_months: age_in_months,
@@ -74,35 +70,39 @@ defmodule Growth.LoadReference do
   end
 
   defp get_reference(data_type, gender, age_in_months) do
-    case :ets.lookup(data_type, {gender, :month, age_in_months}) do
-      [{{^gender, :month, ^age_in_months}, data}] -> {:ok, data}
+    a_gender = String.to_existing_atom(gender)
+
+    case :ets.lookup(data_type, {a_gender, :month, age_in_months}) do
+      [{{^a_gender, :month, ^age_in_months}, data}] -> {:ok, data}
       [] -> {:error, "reference not found for #{data_type}, #{gender}, age #{age_in_months}"}
     end
   end
 
-  defp ets_table_name(data_type, gender) do
-    :"#{data_type}_#{gender}_ref"
-  end
+  # NOTE: (jpd) for now this is unused
+  # defp ets_table_name(data_type, gender) do
+  #   :"#{data_type}_#{gender}_ref"
+  # end
 
-  defp interpolate(lower_ref, upper_ref, fraction) do
-    keys = [:l, :m, :s, :sd0, :sd1, :sd2, :sd3, :sd1neg, :sd2neg, :sd3neg]
-
-    interpolated =
-      Enum.reduce(keys, %{}, fn key, acc ->
-        v_lower = Map.get(lower_ref, key)
-        v_upper = Map.get(upper_ref, key)
-
-        # linear interpolation
-        value =
-          if is_number(v_lower) and is_number(v_upper) do
-            v_lower + (v_upper - v_lower) * fraction
-          else
-            nil
-          end
-
-        Map.put(acc, key, value)
-      end)
-
-    {:ok, interpolated}
-  end
+  # NOTE: (jpd) for now this is unused
+  # defp interpolate(lower_ref, upper_ref, fraction) do
+  #   keys = [:l, :m, :s, :sd0, :sd1, :sd2, :sd3, :sd1neg, :sd2neg, :sd3neg]
+  #
+  #   interpolated =
+  #     Enum.reduce(keys, %{}, fn key, acc ->
+  #       v_lower = Map.get(lower_ref, key)
+  #       v_upper = Map.get(upper_ref, key)
+  #
+  #       # linear interpolation
+  #       value =
+  #         if is_number(v_lower) and is_number(v_upper) do
+  #           v_lower + (v_upper - v_lower) * fraction
+  #         else
+  #           nil
+  #         end
+  #
+  #       Map.put(acc, key, value)
+  #     end)
+  #
+  #   {:ok, interpolated}
+  # end
 end
