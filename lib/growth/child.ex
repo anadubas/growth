@@ -94,6 +94,6 @@ defmodule Growth.Child do
 
   def add_age_in_decimal(%__MODULE__{birthday: birthday, measure_date: nil} = child)
       when not is_nil(birthday) do
-    {:ok, %{child | age_in_decimal: Calculate.in_months_decimal(birthday, Date.utc_today())}}
+    child |> add_measure_date() |> add_age_in_decimal()
   end
 end
