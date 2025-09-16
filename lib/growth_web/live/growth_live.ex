@@ -1,7 +1,9 @@
 defmodule GrowthWeb.GrowthLive do
   use Phoenix.LiveView
 
-  alias Growth.{Child, Measure}
+  alias Growth.Child
+  alias Growth.LoadReferenceChart
+  alias Growth.Measure
 
   @impl true
   def mount(_params, _session, socket) do
@@ -39,11 +41,6 @@ defmodule GrowthWeb.GrowthLive do
 
     chart_hc =
       build_chart_data(:head_circumference, socket.assigns.child, measure.head_circumference)
-
-    IO.inspect(chart_height, label: "Chart Data")
-    IO.inspect(chart_weight, label: "Chart Data")
-    IO.inspect(chart_bmi, label: "Chart Data")
-    IO.inspect(chart_hc, label: "Chart Data")
 
     {:noreply,
      assign(socket,
@@ -96,48 +93,50 @@ defmodule GrowthWeb.GrowthLive do
     end)
   end
 
-  defp build_chart_data(type, child, value) do
-    age_range = 0..24 |> Enum.to_list()
-    child_age = Growth.Calculate.in_months_decimal(child.birthday, Date.utc_today())
+  defp build_chart_data(
+         type,
+         %Child{gender: gender, age_in_months: reference_age_in_months},
+         value
+       ) do
+    age_range_in_months = 5
+    age_subdivisions = 10
 
-    Enum.reduce(
-      age_range,
-      %{
-        labels: [],
-        child: [],
-        sd3neg: [],
-        sd2neg: [],
-        sd1neg: [],
-        m: [],
-        sd1: [],
-        sd2: [],
-        sd3: []
-      },
-      fn age, acc ->
-        case Growth.LoadReference.load_data(type, %Growth.Child{
-               gender: child.gender,
-               age_in_months: child_age,
-               name: child.name,
-               birthday: child.birthday
-             }) do
-          {:ok, data} ->
-            %{
-              acc
-              | labels: acc.labels ++ [age],
-                sd3neg: acc.sd3neg ++ [%{x: age, y: data.sd3neg}],
-                sd2neg: acc.sd2neg ++ [%{x: age, y: data.sd2neg}],
-                sd1neg: acc.sd1neg ++ [%{x: age, y: data.sd1neg}],
-                m: acc.m ++ [%{x: age, y: data.m}],
-                sd1: acc.sd1 ++ [%{x: age, y: data.sd1}],
-                sd2: acc.sd2 ++ [%{x: age, y: data.sd2}],
-                sd3: acc.sd3 ++ [%{x: age, y: data.sd3}]
-            }
+    default_data = %{
+      child: [%{x: reference_age_in_months, y: value}],
+      labels: [],
+      sd3: [],
+      sd2: [],
+      sd1: [],
+      sd3neg: [],
+      sd2neg: [],
+      sd1neg: [],
+      m: []
+    }
 
-          {:error, _} ->
+    case LoadReferenceChart.load_data(
+           type,
+           String.to_existing_atom(gender),
+           reference_age_in_months,
+           age_range_in_months,
+           age_subdivisions
+         ) do
+      {:ok, data} ->
+        Enum.reduce(data, default_data, fn point, acc ->
+          %{
             acc
-        end
-      end
-    )
-    |> Map.put(:child, [%{x: child.age_in_months, y: value}])
+            | labels: [point.age | acc.labels],
+              sd3neg: [%{x: point.age, y: point.sd3neg} | acc.sd3neg],
+              sd2neg: [%{x: point.age, y: point.sd2neg} | acc.sd2neg],
+              sd1neg: [%{x: point.age, y: point.sd1neg} | acc.sd1neg],
+              m: [%{x: point.age, y: point.m} | acc.m],
+              sd1: [%{x: point.age, y: point.sd1} | acc.sd1],
+              sd2: [%{x: point.age, y: point.sd2} | acc.sd2],
+              sd3: [%{x: point.age, y: point.sd3} | acc.sd3]
+          }
+        end)
+
+      {:error, _} ->
+        default_data
+    end
   end
 end
