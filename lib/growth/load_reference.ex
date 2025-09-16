@@ -77,32 +77,4 @@ defmodule Growth.LoadReference do
       [] -> {:error, "reference not found for #{data_type}, #{gender}, age #{age_in_months}"}
     end
   end
-
-  # NOTE: (jpd) for now this is unused
-  # defp ets_table_name(data_type, gender) do
-  #   :"#{data_type}_#{gender}_ref"
-  # end
-
-  # NOTE: (jpd) for now this is unused
-  # defp interpolate(lower_ref, upper_ref, fraction) do
-  #   keys = [:l, :m, :s, :sd0, :sd1, :sd2, :sd3, :sd1neg, :sd2neg, :sd3neg]
-  #
-  #   interpolated =
-  #     Enum.reduce(keys, %{}, fn key, acc ->
-  #       v_lower = Map.get(lower_ref, key)
-  #       v_upper = Map.get(upper_ref, key)
-  #
-  #       # linear interpolation
-  #       value =
-  #         if is_number(v_lower) and is_number(v_upper) do
-  #           v_lower + (v_upper - v_lower) * fraction
-  #         else
-  #           nil
-  #         end
-  #
-  #       Map.put(acc, key, value)
-  #     end)
-  #
-  #   {:ok, interpolated}
-  # end
 end
