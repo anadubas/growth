@@ -11,6 +11,7 @@ defmodule Growth.Calculate do
   """
 
   alias Growth.Child
+  alias Growth.Classify
   alias Growth.LoadReference
   alias Growth.Measure
   alias Growth.Percentile
@@ -189,52 +190,8 @@ defmodule Growth.Calculate do
     Map.put(data, :percentile, percentile * 100.0)
   end
 
-  defp add_classification(%{zscore: z} = data, :weight) do
-    classification =
-      cond do
-        z < -3 -> "Baixo peso grave"
-        z < -2 -> "Baixo peso"
-        z <= 2 -> "Eutrófico"
-        z <= 3 -> "Sobrepeso"
-        true -> "Obesidade"
-      end
-
-    Map.put(data, :classification, classification)
-  end
-
-  defp add_classification(%{zscore: z} = data, :height) do
-    classification =
-      cond do
-        z < -3 -> "Muito baixa estatura"
-        z < -2 -> "Baixa estatura"
-        true -> "Estatura adequada"
-      end
-
-    Map.put(data, :classification, classification)
-  end
-
-  defp add_classification(%{zscore: z} = data, :bmi) do
-    classification =
-      cond do
-        z < -3 -> "Magreza acentuada"
-        z < -2 -> "Magreza"
-        z <= 1 -> "Eutrofia"
-        z <= 2 -> "Sobrepeso"
-        z <= 3 -> "Obesidade"
-        true -> "Obesidade grave"
-      end
-
-    Map.put(data, :classification, classification)
-  end
-
-  defp add_classification(%{zscore: z} = data, :head_circumference) do
-    classification =
-      cond do
-        z < -2 -> "Microcefalia"
-        z > 2 -> "Macrocefalia"
-        true -> "Normal"
-      end
-
+  defp add_classification(%{zscore: zscore} = data, data_type) do
+    classification = Classify.calculate(data_type, zscore)
     Map.put(data, :classification, classification)
   end
 
