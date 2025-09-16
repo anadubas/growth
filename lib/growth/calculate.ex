@@ -13,6 +13,7 @@ defmodule Growth.Calculate do
   alias Growth.Child
   alias Growth.LoadReference
   alias Growth.Measure
+  alias Growth.Percentile
   alias Growth.Zscore
   require :telemetry
 
@@ -184,7 +185,7 @@ defmodule Growth.Calculate do
   end
 
   defp add_percentile(%{zscore: zscore} = data) do
-    percentile = Float.round(0.5 * (:math.erf(zscore / :math.sqrt(2)) + 1), 2)
+    percentile = Percentile.calculate(zscore)
     Map.put(data, :percentile, percentile * 100.0)
   end
 
