@@ -21,39 +21,40 @@ defmodule Growth.CalculateTest do
   end
 
   test "returns a Measure struct with results" do
-    :meck.new(Growth.Zscore, [:passthrough])
-    :meck.expect(Growth.Zscore, :calculate, fn _, _, _, _ -> 0.5 end)
-
-    :meck.new(Growth.LoadReference, [:passthrough])
-
-    :meck.expect(Growth.LoadReference, :load_data, fn _, _ ->
-      {:ok,
-       %{
-         l: 1.0,
-         m: 10.0,
-         s: 0.1,
-         sd0: 10.0,
-         sd1: 11.0,
-         sd2: 12.0,
-         sd3: 13.0,
-         sd1neg: 9.0,
-         sd2neg: 8.0,
-         sd3neg: 7.0
-       }}
-    end)
+    # :meck.new(Growth.Zscore, [:passthrough])
+    # :meck.expect(Growth.Zscore, :calculate, fn _, _, _, _ -> 0.5 end)
+    #
+    # :meck.new(Growth.LoadReference, [:passthrough])
+    #
+    # :meck.expect(Growth.LoadReference, :load_data, fn _, _ ->
+    #   {:ok,
+    #    %{
+    #      l: 1.0,
+    #      m: 10.0,
+    #      s: 0.1,
+    #      sd0: 10.0,
+    #      sd1: 11.0,
+    #      sd2: 12.0,
+    #      sd3: 13.0,
+    #      sd1neg: 9.0,
+    #      sd2neg: 8.0,
+    #      sd3neg: 7.0
+    #    }}
+    # end)
 
     child = %Child{
       name: "Joana",
       birthday: ~D[2022-01-01],
       gender: "female",
       measure_date: ~D[2024-01-01],
-      age_in_months: 24
+      age_in_months: Calculate.age_in_months(~D[2022-01-01], ~D[2024-01-01]),
+      age_in_decimal: Calculate.in_months_decimal(~D[2022-01-01], ~D[2024-01-01])
     }
 
     measure = %Measure{
-      weight: 12.0,
-      height: 85.0,
-      head_circumference: 46.0,
+      weight: 4.5,
+      height: 52.7,
+      head_circumference: 38.3,
       bmi: 16.6,
       child: child
     }
@@ -61,10 +62,10 @@ defmodule Growth.CalculateTest do
     result = Calculate.results(measure, child)
 
     assert is_map(result.results)
-    assert result.results.bmi_result[:zscore] == 0.5
-    assert result.results.weight_result[:percentile] == 69.0
-    assert result.results.height_result[:sd1neg] == 9.0
-    assert result.results.head_circumference_result[:sd3] == 13.0
+    assert_in_delta result.results.bmi[:zscore], 1.7600, 0.001
+    assert result.results.weight[:percentile] == 84.52
+    assert result.results.height[:sd1neg] == 50.803
+    assert result.results.head_circumference[:sd3] == 39.487
   end
 
   describe "calculate_result/3 fallback" do
