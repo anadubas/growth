@@ -146,15 +146,12 @@ defmodule Growth.Calculate do
       fn ->
         case LoadReference.load_data(data_type, child) do
           {:ok, %{l: l, m: m, s: s} = data} ->
-            z = Zscore.calculate(measure, l, m, s)
-            p = to_percentile(z)
-
-            data
-            |> Map.merge(%{
-              zscore: z,
-              percentile: p,
-              classification: classify(z, data_type)
-            })
+            result =
+              data
+              |> add_zscore(measure)
+              |> add_percentile()
+              |> add_classification(data_type)
+              |> format_result()
 
             {result,
              %{
@@ -181,49 +178,6 @@ defmodule Growth.Calculate do
 
   def calculate_result(_measure, _data_type, _child), do: "no results"
 
-  defp to_percentile(z) do
-    # converte escore-z em percentil (0..100)
-    prob = 0.5 * (1.0 + :math.erf(z / :math.sqrt(2)))
-    Float.round(prob * 100.0, 2)
-  end
-
-  defp classify(z, :weight) do
-    cond do
-      z < -3 -> "Baixo peso grave"
-      z < -2 -> "Baixo peso"
-      z <= 2 -> "Eutrófico"
-      z <= 3 -> "Sobrepeso"
-      true -> "Obesidade"
-    end
-  end
-
-  defp classify(z, :height) do
-    cond do
-      z < -3 -> "Muito baixa estatura"
-      z < -2 -> "Baixa estatura"
-      true -> "Estatura adequada"
-    end
-  end
-
-  defp classify(z, :bmi) do
-    cond do
-      z < -3 -> "Magreza acentuada"
-      z < -2 -> "Magreza"
-      z <= 1 -> "Eutrofia"
-      z <= 2 -> "Sobrepeso"
-      z <= 3 -> "Obesidade"
-      true -> "Obesidade grave"
-    end
-  end
-
-  defp classify(z, :head_circumference) do
-    cond do
-      z < -2 -> "Microcefalia"
-      z > 2 -> "Macrocefalia"
-      true -> "Normal"
-    end
-  end
-
   defp add_zscore(%{l: l, m: m, s: s} = data, measure) do
     zscore = Zscore.calculate(measure, l, m, s)
     Map.put(data, :zscore, zscore)
@@ -232,6 +186,55 @@ defmodule Growth.Calculate do
   defp add_percentile(%{zscore: zscore} = data) do
     percentile = Float.round(0.5 * (:math.erf(zscore / :math.sqrt(2)) + 1), 2)
     Map.put(data, :percentile, percentile * 100.0)
+  end
+
+  defp add_classification(%{zscore: z} = data, :weight) do
+    classification =
+      cond do
+        z < -3 -> "Baixo peso grave"
+        z < -2 -> "Baixo peso"
+        z <= 2 -> "Eutrófico"
+        z <= 3 -> "Sobrepeso"
+        true -> "Obesidade"
+      end
+
+    Map.put(data, :classification, classification)
+  end
+
+  defp add_classification(%{zscore: z} = data, :height) do
+    classification =
+      cond do
+        z < -3 -> "Muito baixa estatura"
+        z < -2 -> "Baixa estatura"
+        true -> "Estatura adequada"
+      end
+
+    Map.put(data, :classification, classification)
+  end
+
+  defp add_classification(%{zscore: z} = data, :bmi) do
+    classification =
+      cond do
+        z < -3 -> "Magreza acentuada"
+        z < -2 -> "Magreza"
+        z <= 1 -> "Eutrofia"
+        z <= 2 -> "Sobrepeso"
+        z <= 3 -> "Obesidade"
+        true -> "Obesidade grave"
+      end
+
+    Map.put(data, :classification, classification)
+  end
+
+  defp add_classification(%{zscore: z} = data, :head_circumference) do
+    classification =
+      cond do
+        z < -2 -> "Microcefalia"
+        z > 2 -> "Macrocefalia"
+        true -> "Normal"
+      end
+
+    Map.put(data, :classification, classification)
   end
 
   defp format_result(data) do
@@ -244,7 +247,8 @@ defmodule Growth.Calculate do
       sd2neg: data.sd2neg,
       sd3neg: data.sd3neg,
       zscore: data.zscore,
-      percentile: data.percentile
+      percentile: data.percentile,
+      classification: data.classification
     }
   end
 end
