@@ -14,6 +14,7 @@ defmodule Growth.LoadReferenceChart do
   - `:bmi` — BMI-for-age reference
   - `:head_circumference` — Head circumference-for-age reference
   """
+  require :telemetry
 
   @doc """
   Loads a range of reference data from the ETS table for a given measurement type and child.
@@ -41,21 +42,44 @@ defmodule Growth.LoadReferenceChart do
       ) do
     a_gender = String.to_existing_atom(gender)
 
-    data_type
-    |> match_spec(a_gender, reference_age_in_months, range_size_in_months)
-    |> then(&:ets.select(data_type, &1))
-    |> case do
-      [] ->
-        {:error, "no data found for #{data_type}, #{gender}, age #{reference_age_in_months}"}
+    :telemetry.span(
+      [:growth, :reference_data, :chart],
+      %{
+        age_in_months: reference_age_in_months,
+        gender: gender,
+        data_type: data_type
+      },
+      fn ->
+        data_type
+        |> match_spec(a_gender, reference_age_in_months, range_size_in_months)
+        |> then(&:ets.select(data_type, &1))
+        |> case do
+          [] ->
+            {{:error,
+              "no data found for #{data_type}, #{gender}, age #{reference_age_in_months}"},
+             %{
+               age_in_months: reference_age_in_months,
+               gender: gender,
+               data_type: data_type,
+               success: false
+             }}
 
-      result ->
-        interpolated_result =
-          result
-          |> Enum.sort(&(&1.age < &2.age))
-          |> interpolate_data(subdivisions)
+          result ->
+            interpolated_result =
+              result
+              |> Enum.sort(&(&1.age < &2.age))
+              |> interpolate_data(subdivisions)
 
-        {:ok, interpolated_result}
-    end
+            {{:ok, interpolated_result},
+             %{
+               age_in_months: reference_age_in_months,
+               gender: gender,
+               data_type: data_type,
+               success: true
+             }}
+        end
+      end
+    )
   end
 
   defp match_spec(_, gender, _, :inf) do

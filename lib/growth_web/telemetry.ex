@@ -75,6 +75,10 @@ defmodule GrowthWeb.Telemetry do
         # tags: [:data_type, :success],
         unit: {:native, :millisecond}
       ),
+      summary("growth.reference_data.chart.stop.duration",
+        # tags: [:data_type, :success],
+        unit: {:native, :millisecond}
+      ),
 
       # VM Metrics
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
@@ -115,7 +119,9 @@ defmodule GrowthWeb.Telemetry do
       [:growth, :calculation, :measure, :start],
       [:growth, :calculation, :measure, :stop],
       [:growth, :reference_data, :load, :start],
-      [:growth, :reference_data, :load, :stop]
+      [:growth, :reference_data, :load, :stop],
+      [:growth, :reference_data, :chart, :start],
+      [:growth, :reference_data, :chart, :stop]
     ]
   end
 
