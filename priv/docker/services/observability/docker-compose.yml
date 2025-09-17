@@ -1,62 +1,167 @@
 ---
 services:
+  clickhouse_init:
+    image: &clickhouse_image "clickhouse/clickhouse-server:25.8.2.29-alpine"
+    hostname: clickhouse_init
+    restart: on-failure
+    profiles:
+      - observability
+      - setup
+      - clickhouse
+      - signoz
+    volumes:
+      - "./config/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/"
+    networks:
+      - observability
+    command:
+      - bash
+      - -c
+      - |
+        version="v0.0.1"
+        node_os=$$(uname -s | tr '[:upper:]' '[:lower:]')
+        node_arch=$$(uname -m | sed s/aarch64/arm64/ | sed s/x86_64/amd64/)
+        echo "Fetching histogram-binary for $${node_os}/$${node_arch}"
+        cd /tmp
+        wget -O histogram-quantile.tar.gz "https://github.com/SigNoz/signoz/releases/download/histogram-quantile%2F$${version}/histogram-quantile_$${node_os}_$${node_arch}.tar.gz"
+        tar -xvzf histogram-quantile.tar.gz
+        mv histogram-quantile /var/lib/clickhouse/user_scripts/histogramQuantile
+
+  zookeeper:
+    image: "signoz/zookeeper:3.9.3"
+    hostname: zookeeper
+    restart: unless-stopped
+    profiles:
+      - observability
+      - clickhouse
+      - zookeeper
+      - signoz
+    user: root
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: yes
+      ZOO_AUTOPURGE_INTERVAL: 1
+      ZOO_ENABLE_PROMETHEUS_METRICS: yes
+      ZOO_PROMETHEUS_METRICS_PORT_NUMBER: 9141
+      ZOO_SERVER_ID: 1
+    volumes:
+      - "zookeeper_data:/bitnami/zookeeper"
+    networks:
+      - observability
+    labels:
+      signoz.io/scrape: "true"
+      signoz.io/port: "9141"
+      signoz.io/path: "/metrics"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -s -m 2 http://localhost:8080/commands/ruok | grep error | grep null
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   clickhouse:
-    image: "clickhouse/clickhouse-server:25.8.2.29-alpine"
+    image: *clickhouse_image
     hostname: clickhouse
     restart: unless-stopped
     profiles:
       - observability
       - clickhouse
-      - uptrace
       - signoz
     ports:
-      - "8123:8123" # HTTP interface
-      - "9000:9000" # Native TCP interface
+      - "${GROWTH_O11Y_CLICKHOUSE_HTTP_PORT:-:8123}"
+      - "${GROWTH_O11Y_CLICKHOUSE_TCP_PORT:-:9000}"
+    depends_on:
+      clickhouse_init:
+        condition: service_completed_successfully
+      zookeeper:
+        condition: service_healthy
     environment:
-      CLICKHOUSE_DB: signoz
-      CLICKHOUSE_USER: &clickhouse_user default
-      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
-      # Note: The default user has an empty password.
-      # For production, set CLICKHOUSE_PASSWORD and update dependent services.
-      CLICKHOUSE_PASSWORD: &clickhouse_password ${GROWTH_O11Y_CLICKHOUSE_PASSWORD:-""}
+      CLICKHOUSE_SKIP_USER_SETUP: 1
     volumes:
+      - "./config/clickhouse/cluster.xml:/etc/clickhouse-server/config.d/cluster.xml"
+      - "./config/clickhouse/config.xml:/etc/clickhouse-server/config.xml"
+      - "./config/clickhouse/custom-function.xml:/etc/clickhouse-server/custom-function.xml"
+      - "./config/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/"
+      - "./config/clickhouse/users.xml:/etc/clickhouse-server/users.xml"
       - "clickhouse_data:/var/lib/clickhouse"
     networks:
       - observability
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      test: ["CMD", "wget", "--spider", "-q", "http://0.0.0.0:8123/ping"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  signoz_migration_sync:
+    image: &signoz_migrator_image "signoz/signoz-schema-migrator:v0.129.5"
+    hostname: signoz_migration_sync
+    restart: on-failure
+    profiles:
+      - observability
+      - setup
+      - signoz
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - observability
+    command:
+      - sync
+      - "--dsn=tcp://clickhouse:9000"
+      - --up=
+
+  signoz_migration_async:
+    image: *signoz_migrator_image
+    hostname: signoz_migration_async
+    restart: on-failure
+    profiles:
+      - observability
+      - setup
+      - signoz
+    depends_on: &setup_depends
+      clickhouse:
+        condition: service_healthy
+      signoz_migration_sync:
+        condition: service_completed_successfully
+    networks:
+      - observability
+    command:
+      - async
+      - "--dsn=tcp://clickhouse:9000"
+      - --up=
+
   signoz:
-    image: "signoz/signoz:v0.94.0"
+    image: "signoz/signoz:v0.95.1"
     hostname: signoz
     restart: unless-stopped
     profiles:
       - observability
       - signoz
     ports:
-      - "3301:3301" # Signoz UI
-      - "9001:9001" # Signoz API (Query Service)
+      - "${GROWTH_O11Y_SIGNOZ_UI_PORT:-:8080}"
+      - "${GROWTH_O11Y_SIGNOZ_PPROF_PORT:-:6060}"
       # OTLP ports (4317, 4318) are not exposed to the host to avoid conflict
       # with the otel-collector. The collector will forward data to SigNoz
       # on the internal network at signoz:4317 (gRPC) and signoz:4318 (HTTP).
     environment:
-      SIGNOZ_TELEMETRY_ENABLED: "false"
+      DASHBOARDS_PATH: /root/config/dashboards
+      DEPLOYMENT_TYPE: docker-standalone-amd
+      DOT_METRICS_ENABLED: true
+      GODEBUG: netdns=go
+      SIGNOZ_ALERTMANAGER_PROVIDER: signoz
+      SIGNOZ_SQLSTORE_SQLITE_PATH: /var/lib/signoz/signoz.db
+      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: "tcp://clickhouse:9000"
       STORAGE: clickhouse
-      CLICKHOUSE_URL: "http://clickhouse:8123"
-      CLICKHOUSE_USER: *clickhouse_user
-      CLICKHOUSE_PASSWORD: *clickhouse_password
+      TELEMETRY_ENABLED: true
     depends_on:
-      clickhouse:
-        condition: service_healthy
+      <<: *setup_depends
     volumes:
-      - signoz_data:/var/lib/signoz
+      - "./config/signoz/prometheus.yml:/root/config/prometheus.yml"
+      - "./config/signoz/dashboards:/root/config/dashboards"
+      - "signoz_data:/var/lib/signoz"
     networks:
       - observability
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3301/"]
+      test: ["CMD", "wget", "--spider", "-q", "localhost:8080/api/v1/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -68,31 +173,26 @@ services:
     profiles:
       - observability
       - otel-collector
-      - uptrace
-      - signoz
-      - openobserve
-    command: ["--config=/etc/otel-collector-config.yaml"]
+    command: ["--config=/etc/otel-collector-config.yml"]
     ports:
-      - "4317:4317" # OTLP gRPC (from application)
-      - "4318:4318" # OTLP HTTP (from application)
-      - "8888:8888" # Health check and metrics endpoint
-      - "8889:8889" # Prometheus metrics
+      - "${GROWTH_O11Y_COLLECTOR_GRPC_PORT:-:4317}"
+      - "${GROWTH_O11Y_COLLECTOR_HTTP_PORT:-:4318}"
+      - "${GROWTH_O11Y_COLLECTOR_HEALTH_PORT:-:8888}"
+      - "${GROWTH_O11Y_COLLECTOR_PROM_PORT:-:8889}"
     volumes:
-      - "./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro"
+      - "./config/otel-collector/config.yml:/etc/otel-collector-config.yml:ro"
     depends_on:
-      uptrace:
-        condition: service_healthy
+      <<: *setup_depends
       signoz:
         condition: service_healthy
-      openobserve:
-        condition: service_started
     networks:
       - observability
+      - default
 
 volumes:
   clickhouse_data: {}
   signoz_data: {}
+  zookeeper_data: {}
 
 networks:
-  observability:
-    driver: bridge
+  observability: {}
