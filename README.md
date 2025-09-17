@@ -113,3 +113,11 @@ The application emits telemetry events to monitor user interactions and business
 * `[:growth, :reference_data, :load, :stop]` - Emitted when reference data loading completes
   - **Measurements**: `%{duration: native_time(), monotonic_time: integer()}`
   - **Metadata**: `%{age_in_months: number(), gender: String.t(), data_type: atom(), measure_date: Date.t(), success: boolean(), reason: String.t() | nil}`
+
+* `[:growth, :reference_data, :chart, :start]` - Emitted when reference data loading for charts begins
+  - **Measurements**: `%{monotonic_time: integer()}`
+  - **Metadata**: `%{age_in_months: number(), gender: String.t(), data_type: atom()}`
+
+* `[:growth, :reference_data, :chart, :stop]` - Emitted when reference data loading for charts completes
+  - **Measurements**: `%{duration: native_time(), monotonic_time: integer()}`
+  - **Metadata**: `%{age_in_months: number(), gender: String.t(), data_type: atom(), success: boolean(), reason: String.t() | nil}`
