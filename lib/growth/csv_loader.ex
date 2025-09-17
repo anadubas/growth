@@ -90,11 +90,12 @@ defmodule Growth.CSVLoader do
     Enum.each(data, fn row ->
       gender = get_gender(row["gender"])
       age = String.to_integer(row["age"])
-      key = {gender, :month, age}
+      age_unit = get_age_unit(row["age_unit"])
+      key = {gender, age_unit, age}
 
       value = %{
         age: age,
-        age_unit: "month",
+        age_unit: row["age_unit"],
         gender: gender,
         l: parse_float(row["l"]),
         m: parse_float(row["m"]),
@@ -124,4 +125,8 @@ defmodule Growth.CSVLoader do
 
   defp get_gender("female"), do: :female
   defp get_gender("male"), do: :male
+
+  defp get_age_unit("day"), do: :day
+  defp get_age_unit("week"), do: :week
+  defp get_age_unit("month"), do: :month
 end
