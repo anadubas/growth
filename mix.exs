@@ -51,7 +51,6 @@ defmodule Growth.MixProject do
        compile: false,
        depth: 1},
       {:jason, "~> 1.4.0"},
-      {:meck, "~> 1.0.0", only: :test},
       {:nimble_csv, "~> 1.3.0"},
       {:phoenix, "~> 1.7.14"},
       {:phoenix_html, "~> 4.2.0"},
