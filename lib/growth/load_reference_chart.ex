@@ -21,7 +21,7 @@ defmodule Growth.LoadReferenceChart do
 
   ## Parameters
     - `data_type`: The type of measurement, e.g., `:weight`, `:bmi`, etc.
-    - `gender`: The gender of the child, e.g., `:boy` or `:girl`.
+    - `gender`: The gender of the child, e.g., `"male"` or `"female"`.
     - `reference_age_in_months`: The age in months to center the data range around.
     - `range_size_in_months`: The number of months to extend the range on either side of the reference age. Defaults to 4. Can also be `:inf` to retrieve all data.
     - `subdivisions`: The number of interpolated points to generate between each month. Defaults to 0 (no interpolation).
@@ -30,7 +30,7 @@ defmodule Growth.LoadReferenceChart do
     - `{:ok, list_of_reference_data}` if data is found. The list is sorted by age.
     - `{:error, reason}` if no data is found for the given parameters.
   """
-  @spec load_data(atom(), atom(), pos_integer(), atom() | pos_integer(), non_neg_integer()) ::
+  @spec load_data(atom(), String.t(), pos_integer(), atom() | pos_integer(), non_neg_integer()) ::
           {:ok, list(map())} | {:error, String.t()}
   def load_data(
         data_type,
@@ -39,8 +39,10 @@ defmodule Growth.LoadReferenceChart do
         range_size_in_months \\ 4,
         subdivisions \\ 0
       ) do
+    a_gender = String.to_existing_atom(gender)
+
     data_type
-    |> match_spec(gender, reference_age_in_months, range_size_in_months)
+    |> match_spec(a_gender, reference_age_in_months, range_size_in_months)
     |> then(&:ets.select(data_type, &1))
     |> case do
       [] ->

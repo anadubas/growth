@@ -29,37 +29,37 @@ defmodule Growth.LoadReferenceChartTest do
 
   describe "load_data/5" do
     test "loads a range of data without interpolation", %{table_name: table_name} do
-      {:ok, result} = Growth.LoadReferenceChart.load_data(table_name, :boy, 2, 1)
+      {:ok, result} = Growth.LoadReferenceChart.load_data(table_name, "boy", 2, 1)
       assert length(result) == 3
       assert Enum.map(result, & &1.age) == [1, 2, 3]
       assert Enum.map(result, & &1.m) == [2.0, 4.0, 6.0]
     end
 
     test "loads all data for a gender with :inf range", %{table_name: table_name} do
-      {:ok, result} = Growth.LoadReferenceChart.load_data(table_name, :boy, 1, :inf)
+      {:ok, result} = Growth.LoadReferenceChart.load_data(table_name, "boy", 1, :inf)
       assert length(result) == 4
       assert Enum.map(result, & &1.age) == [1, 2, 3, 4]
     end
 
     test "returns an error when no data is found in the range", %{table_name: table_name} do
       assert {:error, "no data found for #{table_name}, boy, age 10"} ==
-               Growth.LoadReferenceChart.load_data(table_name, :boy, 10, 1)
+               Growth.LoadReferenceChart.load_data(table_name, "boy", 10, 1)
     end
 
     test "handles ranges at the edge of the data", %{table_name: table_name} do
       # Range is [0, 2], but data starts at 1. Should return for ages 1, 2.
-      {:ok, result} = Growth.LoadReferenceChart.load_data(table_name, :boy, 1, 1)
+      {:ok, result} = Growth.LoadReferenceChart.load_data(table_name, "boy", 1, 1)
       assert length(result) == 2
       assert Enum.map(result, & &1.age) == [1, 2]
 
       # Range is [3, 5], but data ends at 4. Should return for ages 3, 4.
-      {:ok, result_upper} = Growth.LoadReferenceChart.load_data(table_name, :boy, 4, 1)
+      {:ok, result_upper} = Growth.LoadReferenceChart.load_data(table_name, "boy", 4, 1)
       assert length(result_upper) == 2
       assert Enum.map(result_upper, & &1.age) == [3, 4]
     end
 
     test "loads data with one subdivision (interpolation)", %{table_name: table_name} do
-      {:ok, result} = Growth.LoadReferenceChart.load_data(table_name, :boy, 2, 1, 1)
+      {:ok, result} = Growth.LoadReferenceChart.load_data(table_name, "boy", 2, 1, 1)
 
       # Expected points for range [1, 3]: 1, 1.5, 2, 2.5, 3
       assert length(result) == 5
@@ -78,7 +78,7 @@ defmodule Growth.LoadReferenceChartTest do
 
     test "loads data with two subdivisions (interpolation)", %{table_name: table_name} do
       # Range is [1, 2]
-      {:ok, result} = Growth.LoadReferenceChart.load_data(table_name, :boy, 1, 1, 2)
+      {:ok, result} = Growth.LoadReferenceChart.load_data(table_name, "boy", 1, 1, 2)
 
       # Expected points for range [1, 2]: 1, 1.333..., 1.666..., 2
       assert length(result) == 4
@@ -96,7 +96,7 @@ defmodule Growth.LoadReferenceChartTest do
 
     test "does not interpolate if only one data point is found", %{table_name: table_name} do
       # Range is [0, 1], so only age 1 is found.
-      {:ok, result} = Growth.LoadReferenceChart.load_data(table_name, :boy, 0, 1, 2)
+      {:ok, result} = Growth.LoadReferenceChart.load_data(table_name, "boy", 0, 1, 2)
       assert length(result) == 1
       assert hd(result).age == 1
     end

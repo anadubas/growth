@@ -115,7 +115,7 @@ defmodule GrowthWeb.GrowthLive do
 
     case LoadReferenceChart.load_data(
            type,
-           String.to_existing_atom(gender),
+           gender,
            reference_age_in_months,
            age_range_in_months,
            age_subdivisions
