@@ -24,7 +24,7 @@ defmodule Growth.Classify do
       "Estatura adequada"
   """
   @spec calculate(atom(), number()) :: String.t()
-  def calulate(:weight, z) do
+  def calculate(:weight, z) do
     cond do
       z < -3 -> "Baixo peso grave"
       z < -2 -> "Baixo peso"
