@@ -30,6 +30,19 @@ With `mise` installed, it's possible to install the runtimes using:
 mise install
 ```
 
+### Setting up the application
+
+With `task` installed, we can setup the entire project by running:
+
+```bash
+task bootstrap
+task setup
+```
+
+This will add `rebar` and `hex`, install all `elixir` and `node` dependencies, and them compile the application and its assets.
+
+For a step-by-step guide of this process, check the following sections.
+
 ### Getting application dependencies
 
 To get the `elixir` dependencies, we can run:
@@ -40,13 +53,16 @@ mix do loca.rebar --force, local.hex --force
 mix do deps.get, deps.compile
 # Using taskfile
 task prepare_system
-task deps
+task deps:application
 ```
 
 We also need to fetch the dependencies for the assets:
 
 ```bash
+# Using npm
 npm install --prefix ./assets
+# Using taskfile
+task deps:assets
 ```
 
 ### Compiling the application
@@ -57,8 +73,7 @@ The application can be compiled by running the following:
 # Using mix
 mix do assets.build, compile
 # Using taskfile
-task assets_build
-task compile
+task build
 ```
 
 ## Running the application
