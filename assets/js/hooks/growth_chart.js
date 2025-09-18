@@ -16,18 +16,18 @@ Hooks.GrowthChart = {
           {
             label: "Criança",
             data: data.child,
-            borderColor: "red",
-            backgroundColor: "red",
+            borderColor: "indigo",
+            backgroundColor: "indigo",
             pointRadius: 6,
-            showLine: false // Scatter points sem linha
+            showLine: false
           },
-          {label: "-3DP", data: data.sd3neg, borderColor: "gray", borderDash: [4, 4], showLine: true},
-    {label: "-2DP", data: data.sd2neg, borderColor: "orange", borderDash: [5, 5], showLine: true},
-    {label: "-1DP", data: data.sd1neg, borderColor: "yellow", borderDash: [6, 6], showLine: true},
-    {label: "Mediana", data: data.m, borderColor: "blue", borderWidth: 2, showLine: true},
-    {label: "+1DP", data: data.sd1, borderColor: "yellow", borderDash: [6, 6], showLine: true},
-    {label: "+2DP", data: data.sd2, borderColor: "orange", borderDash: [5, 5], showLine: true},
-    {label: "+3DP", data: data.sd3, borderColor: "gray", borderDash: [4, 4], showLine: true}
+          { label: "-3DP", data: data.sd3neg, borderColor: "red", borderDash: [4, 4], showLine: true, pointRadius: 0 },
+          { label: "-2DP", data: data.sd2neg, borderColor: "orange", borderDash: [5, 5], showLine: true, pointRadius: 0 },
+          { label: "-1DP", data: data.sd1neg, borderColor: "green", borderDash: [6, 6], showLine: true, pointRadius: 0 },
+          { label: "Mediana", data: data.sd0, borderColor: "blue", borderWidth: 2, showLine: true, pointRadius: 0 },
+          { label: "+1DP", data: data.sd1, borderColor: "green", borderDash: [6, 6], showLine: true, pointRadius: 0 },
+          { label: "+2DP", data: data.sd2, borderColor: "orange", borderDash: [5, 5], showLine: true, pointRadius: 0 },
+          { label: "+3DP", data: data.sd3, borderColor: "red", borderDash: [4, 4], showLine: true, pointRadius: 0 }
         ]
       },
       options: {

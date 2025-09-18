@@ -110,7 +110,7 @@ defmodule GrowthWeb.GrowthLive do
       sd3neg: [],
       sd2neg: [],
       sd1neg: [],
-      m: []
+      sd0: []
     }
 
     case LoadReferenceChart.load_data(
@@ -128,7 +128,7 @@ defmodule GrowthWeb.GrowthLive do
               sd3neg: [%{x: point.age, y: point.sd3neg} | acc.sd3neg],
               sd2neg: [%{x: point.age, y: point.sd2neg} | acc.sd2neg],
               sd1neg: [%{x: point.age, y: point.sd1neg} | acc.sd1neg],
-              m: [%{x: point.age, y: point.m} | acc.m],
+              sd0: [%{x: point.age, y: point.sd0} | acc.sd0],
               sd1: [%{x: point.age, y: point.sd1} | acc.sd1],
               sd2: [%{x: point.age, y: point.sd2} | acc.sd2],
               sd3: [%{x: point.age, y: point.sd3} | acc.sd3]

@@ -32,13 +32,13 @@ defmodule GrowthWeb.ResultsComponent do
   def render(assigns) do
     ~H"""
     <div class="space-y-4">
-      <div class="card bg-base-300 shadow-md rounded-lg p-6">
+      <div class="card max-w-lg mx-auto bg-base-300 shadow-md rounded-lg p-6">
         <h2 class="text-lg font-bold mb-4">Criança</h2>
         <p><strong>Nome:</strong> {@child.name}</p>
         <p><strong>Data de nascimento:</strong> {@child.birthday}</p>
       </div>
 
-      <div class="card bg-base-300 shadow-md rounded-lg p-6">
+      <div class="card max-w-lg mx-auto bg-base-300 shadow-md rounded-lg p-6">
         <h2 class="text-lg font-bold mb-4">Resultados</h2>
 
         <div class="grid grid-cols-2 gap-4">
@@ -63,28 +63,48 @@ defmodule GrowthWeb.ResultsComponent do
         </div>
       </div>
 
-      <div class="grid grid-cols gap-6">
-        <div>
+      <div class="card w-full mx-auto bg-base-300 shadow-md rounded-lg p-6">
+        <div class="w-full text-center mb-4">
           <h3 class="text-lg font-bold">Altura / Idade</h3>
-          <canvas id="chart-height" phx-hook="GrowthChart" data-chart={Jason.encode!(@charts.height)}>
+          <canvas
+            id="chart-height"
+            class="w-full h-96"
+            phx-hook="GrowthChart"
+            data-chart={Jason.encode!(@charts.height)}
+          >
           </canvas>
         </div>
 
-        <div>
+        <div class="w-full text-center mb-4">
           <h3 class="text-lg font-bold">Peso / Idade</h3>
-          <canvas id="chart-weight" phx-hook="GrowthChart" data-chart={Jason.encode!(@charts.weight)}>
+          <canvas
+            id="chart-weight"
+            class="w-full h-96"
+            phx-hook="GrowthChart"
+            data-chart={Jason.encode!(@charts.weight)}
+          >
           </canvas>
         </div>
 
-        <div>
+        <div class="w-full text-center mb-4">
           <h3 class="text-lg font-bold">IMC / Idade</h3>
-          <canvas id="chart-bmi" phx-hook="GrowthChart" data-chart={Jason.encode!(@charts.bmi)}>
+          <canvas
+            id="chart-bmi"
+            class="w-full h-96"
+            phx-hook="GrowthChart"
+            data-chart={Jason.encode!(@charts.bmi)}
+          >
           </canvas>
         </div>
 
-        <div>
+        <div class="w-full text-center mb-4">
           <h3 class="text-lg font-bold">Perímetro Cefálico / Idade</h3>
-          <canvas id="chart-hc" phx-hook="GrowthChart" data-chart={Jason.encode!(@charts.head_circ)}>
+          <canvas
+            id="chart-hc"
+            class="w-full h-96"
+            phx-hook="GrowthChart"
+            data-chart={Jason.encode!(@charts.head_circ)}
+          >
           </canvas>
         </div>
       </div>
