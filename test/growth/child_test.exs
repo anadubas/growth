@@ -36,9 +36,7 @@ defmodule Growth.ChildTest do
         measure_date: measure_date
       }
 
-      {:ok, updated_child} = Child.add_age_in_months(child)
-
-      assert updated_child.age_in_months == 60
+      assert %Child{age_in_months: 60} = Child.add_age_in_months(child)
     end
   end
 end

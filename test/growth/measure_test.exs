@@ -30,7 +30,7 @@ defmodule Growth.MeasureTest do
       assert measure.head_circumference == 49.0
       assert is_float(measure.bmi)
       assert is_map(measure.results)
-      assert Map.has_key?(measure.results, :bmi_result)
+      assert Map.has_key?(measure.results, :bmi)
     end
 
     test "sets BMI to 'no measure' if weight or height is missing", %{child: child} do

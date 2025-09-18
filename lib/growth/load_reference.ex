@@ -27,8 +27,8 @@ defmodule Growth.LoadReference do
     - `{:error, reason}` if the data is invalid or not found.
   """
   @spec load_data(atom(), Growth.Child.t()) :: {:ok, map()} | {:error, String.t()}
-  def load_data(data_type, %Growth.Child{gender: _gender, age_in_months: nil} = child) do
-    with {:ok, updated_child} <- Growth.Child.add_age_in_months(child) do
+  def load_data(data_type, %Growth.Child{gender: _gender, age_in_decimal: nil} = child) do
+    with {:ok, updated_child} <- Growth.Child.add_age_in_decimal(child) do
       load_data(data_type, updated_child)
     end
   end
@@ -43,10 +43,8 @@ defmodule Growth.LoadReference do
         measure_date: child.measure_date
       },
       fn ->
-        key = {String.to_atom(gender), :month, age_in_months}
-
-        case :ets.lookup(data_type, key) do
-          [{^key, value}] ->
+        case get_reference(data_type, gender, age_in_months) do
+          {:ok, value} ->
             {{:ok, value},
              %{
                age_in_months: age_in_months,
@@ -56,9 +54,7 @@ defmodule Growth.LoadReference do
                success: true
              }}
 
-          [] ->
-            reason = "Data not found for #{inspect(key)} in #{inspect(data_type)}"
-
+          {:error, reason} ->
             {{:error, reason},
              %{
                age_in_months: age_in_months,
@@ -71,5 +67,14 @@ defmodule Growth.LoadReference do
         end
       end
     )
+  end
+
+  defp get_reference(data_type, gender, age_in_months) do
+    a_gender = String.to_existing_atom(gender)
+
+    case :ets.lookup(data_type, {a_gender, :month, age_in_months}) do
+      [{{^a_gender, :month, ^age_in_months}, data}] -> {:ok, data}
+      [] -> {:error, "reference not found for #{data_type}, #{gender}, age #{age_in_months}"}
+    end
   end
 end

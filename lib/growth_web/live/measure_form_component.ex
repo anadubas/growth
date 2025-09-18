@@ -38,9 +38,9 @@ defmodule GrowthWeb.MeasureFormComponent do
 
   def render(assigns) do
     ~H"""
-    <div class="card bg-base-300 shadow-md rounded-lg p-6">
+    <div class="card max-w-lg mx-auto bg-base-300 shadow-md rounded-lg p-6">
       <form phx-submit="save_measure">
-        <label class="form-control w-full max-w-xs">
+        <label class="form-control w-full">
           <div class="label">
             <span class="label-text">Altura (cm)</span>
           </div>
@@ -54,7 +54,7 @@ defmodule GrowthWeb.MeasureFormComponent do
           />
         </label>
 
-        <label class="form-control w-full max-w-xs">
+        <label class="form-control w-full">
           <div class="label">
             <span class="label-text">Peso (kg)</span>
           </div>
@@ -68,7 +68,7 @@ defmodule GrowthWeb.MeasureFormComponent do
           />
         </label>
 
-        <label class="form-control w-full max-w-xs">
+        <label class="form-control w-full">
           <div class="label">
             <span class="label-text">Circunferência da Cabeça (cm)</span>
           </div>

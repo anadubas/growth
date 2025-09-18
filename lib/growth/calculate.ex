@@ -11,8 +11,10 @@ defmodule Growth.Calculate do
   """
 
   alias Growth.Child
+  alias Growth.Classify
   alias Growth.LoadReference
   alias Growth.Measure
+  alias Growth.Percentile
   alias Growth.Zscore
   require :telemetry
 
@@ -24,6 +26,29 @@ defmodule Growth.Calculate do
     |> Date.diff(birthday)
     |> Kernel./(@days_in_month)
     |> floor()
+  end
+
+  @spec in_days(%{
+          :calendar => atom(),
+          :day => any(),
+          :month => any(),
+          :year => any(),
+          optional(any()) => any()
+        }) :: integer()
+  def in_days(birthday, date \\ Date.utc_today()) do
+    Date.diff(date, birthday)
+  end
+
+  @spec in_months_decimal(%{
+          :calendar => atom(),
+          :day => any(),
+          :month => any(),
+          :year => any(),
+          optional(any()) => any()
+        }) :: float()
+  def in_months_decimal(birthday, date \\ Date.utc_today()) do
+    days = in_days(birthday, date)
+    Float.round(days / 30.4375, 2)
   end
 
   @spec bmi(number(), number()) :: number()
@@ -84,6 +109,16 @@ defmodule Growth.Calculate do
          }}
       end
     )
+
+    %Measure{
+      growth
+      | results: %{
+          weight: calculate_result(weight, :weight, child),
+          height: calculate_result(height, :height, child),
+          head_circumference: calculate_result(head_circumference, :head_circumference, child),
+          bmi: calculate_result(bmi, :bmi, child)
+        }
+    }
   end
 
   @doc """
@@ -117,6 +152,7 @@ defmodule Growth.Calculate do
               data
               |> add_zscore(measure)
               |> add_percentile()
+              |> add_classification(data_type)
               |> format_result()
 
             {result,
@@ -142,9 +178,7 @@ defmodule Growth.Calculate do
     )
   end
 
-  def calculate_result(_age_in_months, _data_type, _child) do
-    "no results"
-  end
+  def calculate_result(_measure, _data_type, _child), do: "no results"
 
   defp add_zscore(%{l: l, m: m, s: s} = data, measure) do
     zscore = Zscore.calculate(measure, l, m, s)
@@ -152,8 +186,13 @@ defmodule Growth.Calculate do
   end
 
   defp add_percentile(%{zscore: zscore} = data) do
-    percentile = Float.round(0.5 * (:math.erf(zscore / :math.sqrt(2)) + 1), 2)
+    percentile = Percentile.calculate(zscore)
     Map.put(data, :percentile, percentile * 100.0)
+  end
+
+  defp add_classification(%{zscore: zscore} = data, data_type) do
+    classification = Classify.calculate(data_type, zscore)
+    Map.put(data, :classification, classification)
   end
 
   defp format_result(data) do
@@ -166,7 +205,8 @@ defmodule Growth.Calculate do
       sd2neg: data.sd2neg,
       sd3neg: data.sd3neg,
       zscore: data.zscore,
-      percentile: data.percentile
+      percentile: data.percentile,
+      classification: data.classification
     }
   end
 end

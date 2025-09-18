@@ -33,7 +33,8 @@ defmodule Growth.Child do
           gender: String.t() | nil,
           birthday: Date.t() | nil,
           measure_date: Date.t() | nil,
-          age_in_months: number() | nil
+          age_in_months: number() | nil,
+          age_in_decimal: float() | nil
         }
 
   @enforce_keys [:name, :gender, :birthday]
@@ -43,7 +44,8 @@ defmodule Growth.Child do
     :gender,
     :birthday,
     :measure_date,
-    :age_in_months
+    :age_in_months,
+    :age_in_decimal
   ]
 
   @doc """
@@ -56,9 +58,11 @@ defmodule Growth.Child do
       |> create_struct()
       |> add_measure_date()
       |> add_age_in_months()
+      |> add_age_in_decimal()
 
     :telemetry.execute([:growth, :child, :created], %{count: 1}, %{
       age_in_months: child.age_in_months,
+      age_in_decimal: child.age_in_decimal,
       gender: child.gender,
       measure_date: child.measure_date
     })
@@ -80,6 +84,16 @@ defmodule Growth.Child do
 
   def add_age_in_months(%__MODULE__{birthday: birthday, measure_date: measure_date} = child)
       when not is_nil(birthday) and not is_nil(measure_date) do
-    {:ok, %{child | age_in_months: Calculate.age_in_months(birthday, measure_date)}}
+    %{child | age_in_months: Calculate.age_in_months(birthday, measure_date)}
+  end
+
+  def add_age_in_decimal(%__MODULE__{birthday: birthday, measure_date: measure_date} = child)
+      when not is_nil(birthday) and not is_nil(measure_date) do
+    {:ok, %{child | age_in_decimal: Calculate.in_months_decimal(birthday, measure_date)}}
+  end
+
+  def add_age_in_decimal(%__MODULE__{birthday: birthday, measure_date: nil} = child)
+      when not is_nil(birthday) do
+    child |> add_measure_date() |> add_age_in_decimal()
   end
 end

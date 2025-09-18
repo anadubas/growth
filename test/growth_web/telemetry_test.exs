@@ -3,6 +3,7 @@ defmodule GrowthWeb.TelemetryTest do
 
   alias Growth.Calculate
   alias Growth.Child
+  alias Growth.LoadReferenceChart
   alias Growth.Measure
 
   test "emits :child, :created event on success" do
@@ -118,6 +119,49 @@ defmodule GrowthWeb.TelemetryTest do
            data_type: ^data_type,
            gender: "female",
            measure_date: ~D[2024-10-01],
+           success: true
+         }}
+      )
+    end
+  end
+
+  test "emits span events for successful chart data loading" do
+    ref =
+      :telemetry_test.attach_event_handlers(self(), [
+        [:growth, :reference_data, :chart, :start],
+        [:growth, :reference_data, :chart, :stop]
+      ])
+
+    child = %Child{
+      name: "Test",
+      birthday: ~D[2023-01-01],
+      measure_date: ~D[2024-10-01],
+      gender: "female",
+      age_in_months: 20
+    }
+
+    for data_type <- [:weight, :height, :bmi, :head_circumference] do
+      LoadReferenceChart.load_data(
+        data_type,
+        child.gender,
+        child.age_in_months
+      )
+
+      assert_received(
+        {[:growth, :reference_data, :chart, :start], ^ref, %{monotonic_time: _},
+         %{
+           age_in_months: 20,
+           data_type: ^data_type,
+           gender: "female"
+         }}
+      )
+
+      assert_received(
+        {[:growth, :reference_data, :chart, :stop], ^ref, %{duration: _, monotonic_time: _},
+         %{
+           age_in_months: 20,
+           data_type: ^data_type,
+           gender: "female",
            success: true
          }}
       )

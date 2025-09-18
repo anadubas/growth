@@ -21,50 +21,30 @@ defmodule Growth.CalculateTest do
   end
 
   test "returns a Measure struct with results" do
-    :meck.new(Growth.Zscore, [:passthrough])
-    :meck.expect(Growth.Zscore, :calculate, fn _, _, _, _ -> 0.5 end)
-
-    :meck.new(Growth.LoadReference, [:passthrough])
-
-    :meck.expect(Growth.LoadReference, :load_data, fn _, _ ->
-      {:ok,
-       %{
-         l: 1.0,
-         m: 10.0,
-         s: 0.1,
-         sd0: 10.0,
-         sd1: 11.0,
-         sd2: 12.0,
-         sd3: 13.0,
-         sd1neg: 9.0,
-         sd2neg: 8.0,
-         sd3neg: 7.0
-       }}
-    end)
-
     child = %Child{
       name: "Joana",
       birthday: ~D[2022-01-01],
       gender: "female",
       measure_date: ~D[2024-01-01],
-      age_in_months: 24
+      age_in_months: Calculate.age_in_months(~D[2022-01-01], ~D[2024-01-01]),
+      age_in_decimal: Calculate.in_months_decimal(~D[2022-01-01], ~D[2024-01-01])
     }
 
     measure = %Measure{
-      weight: 12.0,
-      height: 85.0,
-      head_circumference: 46.0,
-      bmi: 16.6,
+      weight: 12.8,
+      height: 88.7,
+      head_circumference: 47.0,
+      bmi: 16.27,
       child: child
     }
 
     result = Calculate.results(measure, child)
 
     assert is_map(result.results)
-    assert result.results.bmi_result[:zscore] == 0.5
-    assert result.results.weight_result[:percentile] == 69.0
-    assert result.results.height_result[:sd1neg] == 9.0
-    assert result.results.head_circumference_result[:sd3] == 13.0
+    assert_in_delta result.results.bmi[:zscore], 0.6038, 0.0001
+    assert_in_delta result.results.weight[:percentile], 84.40, 0.01
+    assert result.results.height[:sd1neg] == 82.3
+    assert result.results.head_circumference[:sd3] == 51.2
   end
 
   describe "calculate_result/3 fallback" do

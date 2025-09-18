@@ -12,6 +12,26 @@ defmodule Growth.Zscore do
   maintaining the relative ordering of measurements.
   """
 
+  @doc """
+  Calculates the Z-score for a given measurement using the LMS method.
+  This function handles extreme values (beyond ±3 SD) using an adjustment
+  to prevent excessive Z-scores while maintaining the relative ordering of
+  measurements.
+  ## Parameters
+    - `measure`: The anthropometric measurement (e.g., weight, height).
+    - `l`: The Box-Cox transformation parameter (skewness).
+    - `m`: The median of the reference population.
+    - `s`: The coefficient of variation of the reference population.
+  ## Returns
+    - The calculated Z-score as a float.
+  ## Examples
+      iex> Growth.Zscore.calculate(10.0, 0.1, 9.5, 0.2)
+      0.5278640450004206
+      iex> Growth.Zscore.calculate(15.0, 0.1, 9.5, 0.2)
+      3.25
+      iex> Growth.Zscore.calculate(5.0, 0.1, 9.5, 0.2)
+      -3.25
+  """
   @spec calculate(number(), number(), number(), number()) :: number()
   def calculate(measure, l, m, s) do
     measure
@@ -19,31 +39,27 @@ defmodule Growth.Zscore do
     |> adjust_result(measure, l, m, s)
   end
 
-  defp raw_zscore(measure, l, m, s) do
-    (:math.pow(measure / m, l) - 1) / (s * l)
-  end
+  @doc false
+  defp raw_zscore(measure, 0, m, s), do: :math.log(measure / m) / s
+  defp raw_zscore(measure, l, m, s), do: (:math.pow(measure / m, l) - 1) / (s * l)
 
+  @doc false
   defp adjust_result(zscore, measure, l, m, s) when zscore > 3 do
-    [sd2, sd3, _, _] = cutoffs(l, m, s)
-    sd_delta = sd3 - sd2
-    3 + (measure - sd3) / sd_delta
+    %{+2 => sd2, +3 => sd3} = cutoffs(l, m, s)
+    3 + (measure - sd3) / (sd3 - sd2)
   end
 
   defp adjust_result(zscore, measure, l, m, s) when zscore < -3 do
-    [_, _, sd2, sd3] = cutoffs(l, m, s)
-    sd_delta = sd2 - sd3
-    -3 + (measure - sd3) / sd_delta
+    %{-2 => sd2, -3 => sd3} = cutoffs(l, m, s)
+    -3 + (measure - sd3) / (sd2 - sd3)
   end
 
-  defp adjust_result(zscore, _, _, _, _) do
-    zscore
-  end
+  defp adjust_result(zscore, _, _, _, _), do: zscore
 
+  @doc false
   defp cutoffs(l, m, s) do
-    Enum.map([2, 3, -2, -3], &measure_deviation(&1, l, m, s))
-  end
-
-  defp measure_deviation(sd, l, m, s) do
-    m * :math.pow(1 + l * s * sd, 1 / l)
+    for sd <- [-3, -2, +2, +3], into: %{} do
+      {sd, m * :math.pow(1 + l * s * sd, 1 / l)}
+    end
   end
 end

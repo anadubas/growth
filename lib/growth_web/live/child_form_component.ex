@@ -32,38 +32,38 @@ defmodule GrowthWeb.ChildFormComponent do
 
   def render(assigns) do
     ~H"""
-    <div class="card bg-base-300 shadow-md rounded-lg p-6">
+    <div class="card max-w-lg mx-auto bg-base-300 shadow-md rounded-lg p-6">
       <form phx-submit="save_child">
-        <label class="form-control w-full max-w-xs">
+        <label class="form-control w-full">
           <div class="label">
             <span class="label-text">Nome</span>
           </div>
           <input
             type="text"
             name="child[name]"
-            class="input input-bordered input-primary"
+            class="input input-bordered input-primary w-full"
             placeholder="Nome"
             required
           />
         </label>
 
-        <label class="form-control w-full max-w-xs">
+        <label class="form-control w-full">
           <div class="label">
             <span class="label-text">Data de nascimento</span>
           </div>
           <input
             type="date"
             name="child[birthday]"
-            class="input input-bordered input-primary"
+            class="input input-bordered input-primary w-full"
             required
           />
         </label>
 
-        <label class="form-control w-full max-w-xs">
+        <label class="form-control w-full">
           <div class="label">
             <span class="label-text">Sexo</span>
           </div>
-          <select name="child[gender]" class="select select-bordered select-primary">
+          <select name="child[gender]" class="select select-bordered select-primary w-full" required>
             <option value="female">Menina</option>
             <option value="male">Menino</option>
           </select>

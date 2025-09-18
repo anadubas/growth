@@ -13,6 +13,6 @@
     "daisyui": "^4.12.13"
   },
   "dependencies": {
-    "chart.js": "^4.4.5"
+    "chart.js": "^4.5.0"
   }
 }
