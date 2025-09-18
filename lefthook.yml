@@ -9,13 +9,13 @@ pre-commit:
         - "config/**/*.exs"
         - "mix.exs"
         - "mix.lock"
-      run: task check_format
+      run: task check:format
     credo:
       glob: *files_to_check
-      run: task check_credo
+      run: task check:credo
     dialyzer:
       glob: *files_to_check
-      run: task check_dialyzer
+      run: task check:dialyzer
 
 pre-push:
   parallel: true

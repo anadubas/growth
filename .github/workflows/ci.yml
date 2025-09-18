@@ -25,7 +25,7 @@ jobs:
       - name: Setup erlang/elixir/taskfile runtimes
         uses: jdx/mise-action@v2
       - name: Prepare system
-        run: task prepare_system
+        run: task bootstrap
       - name: Cache dependencies and compiled build
         id: cache-deps
         uses: actions/cache@v4
@@ -40,12 +40,12 @@ jobs:
             ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
       - name: Clean up to avoid incremental build as source of flakiness
         if: github.run_attempt != '1'
-        run: mix do deps.clean --all, clean
+        run: task clean
         shell: sh
       - name: Install dependencies
-        run: task deps
+        run: task deps:application
       - name: Compile without warnings
-        run: task build
+        run: task build:application
 
   format:
     name: Check code format
@@ -58,7 +58,7 @@ jobs:
       - name: Setup erlang/elixir/taskfile runtimes
         uses: jdx/mise-action@v2
       - name: Prepare system
-        run: task prepare_system
+        run: task bootstrap
       - name: Restore deps/compiled build from cache
         id: cache-deps
         uses: actions/cache/restore@v4
@@ -72,7 +72,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
       - name: Check
-        run: task check_format
+        run: task check:format
 
   credo:
     name: Check credo lint
@@ -84,7 +84,7 @@ jobs:
       - name: Setup erlang/elixir/taskfile runtimes
         uses: jdx/mise-action@v2
       - name: Prepare system
-        run: task prepare_system
+        run: task bootstrap
       - name: Restore deps/compiled build from cache
         id: cache-deps
         uses: actions/cache/restore@v4
@@ -98,7 +98,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
       - name: Check
-        run: task check_credo
+        run: task check:credo
 
   dialyzer:
     name: Check dialyzer
@@ -110,7 +110,7 @@ jobs:
       - name: Setup erlang/elixir/taskfile runtimes
         uses: jdx/mise-action@v2
       - name: Prepare system
-        run: task prepare_system
+        run: task bootstrap
       - name: Restore deps/compiled build from cache
         id: cache-deps
         uses: actions/cache/restore@v4
@@ -133,11 +133,11 @@ jobs:
           key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-
-      - name: Clean up to avoida incremental build as source of flakiness
+      - name: Clean up to avoid incremental build as source of flakiness
         if: github.run_attempt != '1'
         run: rm -rf priv/plts/*
       - name: Compile without warnings
-        run: task build
+        run: task build:application
       - name: Create PLTs
         run: task create_plt
       - name: Save PLT resource into cache
@@ -149,4 +149,4 @@ jobs:
           path: priv/plts
           key: ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-${{ hashFiles('**/.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
       - name: Check
-        run: task check_dialyzer
+        run: task check:dialyzer

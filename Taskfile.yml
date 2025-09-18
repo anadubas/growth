@@ -1,5 +1,5 @@
 ---
-version: '3'
+version: "3"
 
 tasks:
   default:
@@ -7,22 +7,47 @@ tasks:
       - task --list
     silent: true
 
-  build:
+  build:application:
     desc: "Compile the application"
     cmds:
       - mix compile --force --warnings-as-errors
 
-  check_format:
+  build:assets:
+    desc: "Build assets"
+    cmds:
+      - mix assets.build
+
+  build:
+    desc: "Build the application and assets"
+    cmds:
+      - task: build:assets
+      - task: build:application
+
+  setup:
+    desc: "Install dependencies and compile the application"
+    cmds:
+      - task: clean
+      - task: deps
+      - task: build
+
+  clean:
+    desc: "Clean build and deps"
+    cmds:
+      - mix do deps.clean --all, clean
+      - MIX_ENV=test mix do deps.clean --all, clean
+      - rm -rf assets/node_modules
+
+  check:format:
     desc: "Check if the code is formatted"
     cmds:
       - mix format --check-formatted
 
-  check_credo:
+  check:credo:
     desc: "Check if the code follows the Credo rules"
     cmds:
       - mix credo --strict
 
-  check_dialyzer:
+  check:dialyzer:
     desc: "Check if the code is linted"
     cmds:
       - mix dialyzer --format github --format dialyxir
@@ -32,21 +57,38 @@ tasks:
     cmds:
       - mix dialyzer --plt
 
-  deps:
-    desc: "Install dependencies"
+  deps:application:
+    desc: "Install elixir dependencies"
     cmds:
       - mix do deps.get, deps.compile
 
+  deps:assets:
+    desc: "Install node dependencies"
+    cmds:
+      - npm install --prefix ./assets
+
+  deps:outdated:
+    desc: "Check for outdated dependencies"
+    cmds:
+      - mix hex.outdated
+      - npm outdated --prefix ./assets --all
+
+  deps:
+    desc: "Install application/assets dependencies"
+    cmds:
+      - task: deps:application
+      - task: deps:assets
+
   lint:
     desc: "Run all linters"
+    deps:
+      - build:application
     cmds:
-      - task: build
-      - task: check_format
-      - task: check_credo
-      - task: create_plt
-      - task: check_dialyzer
+      - task: check:format
+      - task: check:credo
+      - task: check:dialyzer
 
-  prepare_system:
+  bootstrap:
     desc: "Add rebar and hex"
     cmds:
       - mix do local.hex --force, local.rebar --force
@@ -56,7 +98,7 @@ tasks:
     cmds:
       - mix test --trace
 
-  test_single:
+  test:single:
     desc: "Run a single test file or test at specific line"
     cmds:
       - mix test {{.CLI_ARGS}}
@@ -66,11 +108,6 @@ tasks:
     cmds:
       - mix format
 
-  assets_build:
-    desc: "Build assets"
-    cmds:
-      - mix assets.build
-
   server:
     desc: "Start the Phoenix server"
     cmds:
@@ -78,6 +115,8 @@ tasks:
 
   ci:
     desc: "Run all checks (equivalent to mix ci)"
+    deps:
+      - create_plt
     cmds:
       - task: lint
       - task: test
