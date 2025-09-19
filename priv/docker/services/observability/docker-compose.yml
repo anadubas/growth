@@ -136,9 +136,6 @@ services:
     ports:
       - "${GROWTH_O11Y_SIGNOZ_UI_PORT:-:8080}"
       - "${GROWTH_O11Y_SIGNOZ_PPROF_PORT:-:6060}"
-      # OTLP ports (4317, 4318) are not exposed to the host to avoid conflict
-      # with the otel-collector. The collector will forward data to SigNoz
-      # on the internal network at signoz:4317 (gRPC) and signoz:4318 (HTTP).
     environment:
       DASHBOARDS_PATH: /root/config/dashboards
       DEPLOYMENT_TYPE: docker-standalone-amd
