@@ -33,15 +33,6 @@ processors:
     detectors: [env, system]
     timeout: 5s
 
-  resource:
-    attributes:
-      - key: service.name
-        value: growth-app
-        action: insert
-      - key: deployment.environment
-        value: local
-        action: insert
-
   signozspanmetrics/delta:
     metrics_exporter: signozclickhousemetrics
     metrics_flush_interval: 60s
@@ -117,15 +108,20 @@ service:
   pipelines:
     logs:
       receivers: [otlp]
-      processors: [memory_limiter, batch, resource]
+      processors: [memory_limiter, batch]
       exporters: [clickhouselogsexporter, debug]
 
     metrics:
       receivers: [otlp]
-      processors: [memory_limiter, batch, resource]
+      processors: [memory_limiter, batch]
+      exporters: [signozclickhousemetrics, debug]
+
+    metrics/prometheus:
+      receivers: [prometheus]
+      processors: [memory_limiter, batch]
       exporters: [signozclickhousemetrics, debug]
 
     traces:
       receivers: [otlp]
-      processors: [signozspanmetrics/delta, memory_limiter, batch, resource]
+      processors: [signozspanmetrics/delta, memory_limiter, batch]
       exporters: [clickhousetraces, debug]
