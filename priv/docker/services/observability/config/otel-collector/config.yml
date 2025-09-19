@@ -3,76 +3,129 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: 0.0.0.0:4317
+        endpoint: "0.0.0.0:4317"
       http:
-        endpoint: 0.0.0.0:4318
+        endpoint: "0.0.0.0:4318"
+  prometheus:
+    config:
+      global:
+        scrape_interval: 30s
+      scrape_configs:
+        - job_name: otel-collector
+          static_configs:
+            - targets:
+                - "localhost:8888"
+              labels:
+                job_name: otel-collector
 
 processors:
   batch:
-    timeout: 1s
-    send_batch_size: 1024
+    send_batch_size: 10240
+    send_batch_max_size: 20480
+    timeout: 15s
 
   memory_limiter:
-    check_interval: 1s
+    check_interval: 10s
     limit_mib: 512
-    spike_limit_mib: 100
+    spike_limit_mib: 256
+
+  resourcedetection:
+    detectors: [env, system]
+    timeout: 5s
 
   resource:
     attributes:
       - key: service.name
-        value: "growth-app"
+        value: growth-app
         action: insert
       - key: deployment.environment
-        value: "local"
+        value: local
         action: insert
 
+  signozspanmetrics/delta:
+    metrics_exporter: signozclickhousemetrics
+    metrics_flush_interval: 60s
+    latency_histogram_buckets:
+      [
+        100us,
+        1ms,
+        2ms,
+        6ms,
+        10ms,
+        50ms,
+        100ms,
+        250ms,
+        500ms,
+        1000ms,
+        1400ms,
+        2000ms,
+        5s,
+        10s,
+        20s,
+        40s,
+        60s,
+      ]
+    dimensions_cache_size: 100000
+    aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
+    enable_exp_histogram: true
+    dimensions:
+      - name: service.namespace
+        default: default
+      - name: deployment.environment
+        default: default
+      - name: signoz.collector.id
+      - name: service.version
+      - name: browser.platform
+      - name: browser.mobile
+      - name: host.name
+      - name: host.type
+      - name: container.name
+
+extensions:
+  health_check:
+    endpoint: "0.0.0.0:13133"
+  pprof:
+    endpoint: "0.0.0.0:1777"
+
 exporters:
-  # Export to Uptrace
-  otlp/uptrace:
-    # The OTLP gRPC endpoint for Uptrace is 14319. Port 14317 is for the UI.
-    endpoint: uptrace:14319
-    headers:
-      # This DSN is likely a placeholder. Replace with your actual Uptrace DSN.
-      uptrace-dsn: "http://localhost:14317/2"
-    tls:
-      insecure: true
-
-  # Export to SigNoz
-  otlp/signoz:
-    endpoint: signoz:4317
-    tls:
-      insecure: true
-
-  # Export to OpenObserve
-  otlp/openobserve:
-    # The OTLP gRPC endpoint for OpenObserve was set to 5317 in docker-compose.yml.
-    endpoint: openobserve:5317
-    headers:
-      # Basic auth credentials for OpenObserve (admin@example.com:admin123)
-      Authorization: "Basic YWRtaW5AZXhhbXBsZS5jb206YWRtaW4xMjM="
-      # Optional: specify a stream name for OpenObserve.
-      stream-name: "growth-app"
-    tls:
-      insecure: true
-
   # Debug exporter for local development
   debug:
     verbosity: detailed
 
+  clickhouselogsexporter:
+    dsn: "tcp://clickhouse:9000/signoz_logs"
+    timeout: 10s
+    use_new_schema: true
+
+  clickhousetraces:
+    datasource: "tcp://clickhouse:9000/signoz_traces"
+    low_cardinal_exception_grouping: "${env:LOW_CARDINAL_EXCEPTION_GROUPING}"
+    use_new_schema: true
+
+  signozclickhousemetrics:
+    dsn: "tcp://clickhouse:9000/signoz_metrics"
+
 service:
+  telemetry:
+    logs:
+      encoding: json
+
+  extensions:
+    - health_check
+    - pprof
+
   pipelines:
-    traces:
+    logs:
       receivers: [otlp]
       processors: [memory_limiter, batch, resource]
-      exporters: [otlp/uptrace, otlp/signoz, otlp/openobserve, debug]
+      exporters: [clickhouselogsexporter, debug]
 
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, batch, resource]
-      exporters: [otlp/uptrace, otlp/signoz, otlp/openobserve, debug]
+      exporters: [signozclickhousemetrics, debug]
 
-    logs:
+    traces:
       receivers: [otlp]
-      processors: [memory_limiter, batch, resource]
-      # Sending logs to all backends that support them.
-      exporters: [otlp/uptrace, otlp/signoz, otlp/openobserve, debug]
+      processors: [signozspanmetrics/delta, memory_limiter, batch, resource]
+      exporters: [clickhousetraces, debug]
