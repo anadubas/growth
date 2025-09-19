@@ -66,9 +66,6 @@ services:
       - observability
       - clickhouse
       - signoz
-    ports:
-      - "${GROWTH_O11Y_CLICKHOUSE_HTTP_PORT:-:8123}"
-      - "${GROWTH_O11Y_CLICKHOUSE_TCP_PORT:-:9000}"
     depends_on:
       clickhouse_init:
         condition: service_completed_successfully
@@ -139,9 +136,6 @@ services:
     ports:
       - "${GROWTH_O11Y_SIGNOZ_UI_PORT:-:8080}"
       - "${GROWTH_O11Y_SIGNOZ_PPROF_PORT:-:6060}"
-      # OTLP ports (4317, 4318) are not exposed to the host to avoid conflict
-      # with the otel-collector. The collector will forward data to SigNoz
-      # on the internal network at signoz:4317 (gRPC) and signoz:4318 (HTTP).
     environment:
       DASHBOARDS_PATH: /root/config/dashboards
       DEPLOYMENT_TYPE: docker-standalone-amd
@@ -167,7 +161,7 @@ services:
       retries: 5
 
   otel-collector:
-    image: "otel/opentelemetry-collector-contrib:0.135.0"
+    image: "signoz/signoz-otel-collector:v0.129.5"
     hostname: otel-collector
     restart: unless-stopped
     profiles:
@@ -175,11 +169,6 @@ services:
       - signoz
       - collector
     command: ["--config=/etc/otel-collector-config.yml"]
-    ports:
-      - "${GROWTH_O11Y_COLLECTOR_GRPC_PORT:-:4317}"
-      - "${GROWTH_O11Y_COLLECTOR_HTTP_PORT:-:4318}"
-      - "${GROWTH_O11Y_COLLECTOR_HEALTH_PORT:-:8888}"
-      - "${GROWTH_O11Y_COLLECTOR_PROM_PORT:-:8889}"
     volumes:
       - "./config/otel-collector/config.yml:/etc/otel-collector-config.yml:ro"
     depends_on:
