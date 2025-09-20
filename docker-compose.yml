@@ -23,3 +23,18 @@ services:
       PHX_HOST: "${GROWTH_PHX_HOST:-127.0.0.1}"
       PHX_PORT: "${GROWTH_PHX_PORT:-4000}"
       PHX_SCHEME: "${GROWTH_PHX_SCHEME:-http}"
+  live:
+    image: "ghcr.io/livebook-dev/livebook:0.17.2"
+    init: true
+    hostname: live
+    restart: unless-stopped
+    ports:
+      - "${LIVE_PORT:-:8080}"
+    environment:
+      LIVEBOOK_PASSWORD_SALT: "${LIVEBOOK_PASSWORD_SALT:-some_salt}"
+      LIVEBOOK_SECRET_KEY_BASE: "${LIVEBOOK_SECRET_KEY_BASE:-some_key_base}"
+      LIVEBOOK_HOME: "/data"
+    volumes:
+      - live_data:/data
+volumes:
+  live_data: {}
