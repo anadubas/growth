@@ -31,10 +31,12 @@ services:
     ports:
       - "${LIVE_PORT:-:8080}"
     environment:
-      LIVEBOOK_PASSWORD_SALT: "${LIVEBOOK_PASSWORD_SALT:-some_salt}"
+      LIVEBOOK_PASSWORD: "${LIVEBOOK_PASSWORD:-some_salt}"
+      LIVEBOOK_COOKIE: "${LIVEBOOK_COOKIE:-some_cookie}"
+      LIVEBOOK_NODE: "${LIVEBOOK_NODE:-live}"
       LIVEBOOK_SECRET_KEY_BASE: "${LIVEBOOK_SECRET_KEY_BASE:-some_key_base}"
-      LIVEBOOK_HOME: "/data"
+      LIVEBOOK_HOME: /data
     volumes:
-      - live_data:/data
+      - "live_data:/data"
 volumes:
   live_data: {}
