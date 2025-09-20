@@ -24,6 +24,11 @@ services:
       PHX_PORT: "${GROWTH_PHX_PORT:-4000}"
       PHX_SCHEME: "${GROWTH_PHX_SCHEME:-http}"
       RELEASE_DISTRIBUTION: name
+    labels:
+      "growth.scrape": "true"
+      "growth.port": 4000
+      "growth.path": /metrics
+
   live:
     image: "ghcr.io/livebook-dev/livebook:0.17.2"
     init: true
@@ -39,5 +44,6 @@ services:
       LIVEBOOK_HOME: /data
     volumes:
       - "live_data:/data"
+
 volumes:
   live_data: {}

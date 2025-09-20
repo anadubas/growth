@@ -171,6 +171,10 @@ services:
     command: ["--config=/etc/otel-collector-config.yml"]
     volumes:
       - "./config/otel-collector/config.yml:/etc/otel-collector-config.yml:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    group_add:
+      # NOTE: (jpd) The GID of the `docker` group on the host. Find it with: `stat -c '%g' /var/run/docker.sock`
+      - "${OTEL_DOCKER_GID:-989}"
     depends_on:
       <<: *setup_depends
       signoz:
