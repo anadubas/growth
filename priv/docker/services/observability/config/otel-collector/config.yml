@@ -26,7 +26,11 @@ receivers:
               action: keep
               regex: true
             # Use the container IP and the port from the label to form the scrape address
-            - source_labels: [__meta_docker_container_network_ip, __meta_docker_container_label_growth_port]
+            - source_labels:
+                [
+                  __meta_docker_container_network_ip,
+                  __meta_docker_container_label_growth_port,
+                ]
               regex: (.+);(.+)
               replacement: "${1}:${2}"
               target_label: __address__
@@ -38,6 +42,28 @@ receivers:
             - source_labels: [__meta_docker_container_name]
               target_label: instance
               regex: /?(.*)
+  filelog:
+    include: [/var/lib/docker/containers/*/*.log]
+    start_at: beginning
+    include_file_path: true
+    include_file_name: false
+    operators:
+      # Find the container ID from the file path
+      - type: regex_parser
+        regex: "^/var/lib/docker/containers/(?P<container_id>[^/]+)/"
+        source: "attributes.log.file.path"
+        to: "attributes.container.id"
+      # Parse the JSON log entry produced by Docker
+      - type: json_parser
+        timestamp:
+          parse_from: attributes.time
+          layout: "%Y-%m-%dT%H:%M:%S.%fZ"
+        severity:
+          parse_from: attributes.log
+      # Move the log message to the body
+      - type: move
+        from: attributes.log
+        to: body
 
 processors:
   batch:
@@ -128,7 +154,7 @@ service:
 
   pipelines:
     logs:
-      receivers: [otlp]
+      receivers: [otlp, filelog]
       processors: [memory_limiter, batch]
       exporters: [clickhouselogsexporter, debug]
 
