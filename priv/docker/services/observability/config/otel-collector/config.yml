@@ -6,6 +6,7 @@ receivers:
         endpoint: "0.0.0.0:4317"
       http:
         endpoint: "0.0.0.0:4318"
+
   prometheus:
     config:
       global:
@@ -42,27 +43,15 @@ receivers:
             - source_labels: [__meta_docker_container_name]
               target_label: instance
               regex: /?(.*)
-  filelog:
-    include: [/var/lib/docker/containers/*/*.log]
-    start_at: beginning
-    include_file_path: true
-    include_file_name: false
+
+  syslog:
+    tcp:
+      listen_address: "0.0.0.0:5140"
+    protocol: rfc5424
+    location: UTC
     operators:
-      # Find the container ID from the file path
-      - type: regex_parser
-        regex: "^/var/lib/docker/containers/(?P<container_id>[^/]+)/"
-        source: "attributes.log.file.path"
-        to: "attributes.container.id"
-      # Parse the JSON log entry produced by Docker
-      - type: json_parser
-        timestamp:
-          parse_from: attributes.time
-          layout: "%Y-%m-%dT%H:%M:%S.%fZ"
-        severity:
-          parse_from: attributes.log
-      # Move the log message to the body
       - type: move
-        from: attributes.log
+        from: attributes.message
         to: body
 
 processors:
@@ -154,7 +143,7 @@ service:
 
   pipelines:
     logs:
-      receivers: [otlp, filelog]
+      receivers: [otlp, syslog]
       processors: [memory_limiter, batch]
       exporters: [clickhouselogsexporter, debug]
 

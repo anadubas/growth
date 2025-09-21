@@ -168,12 +168,12 @@ services:
       - observability
       - signoz
       - collector
+    expose:
+      - 5140/tcp
     command: ["--config=/etc/otel-collector-config.yml"]
     volumes:
       - "./config/otel-collector/config.yml:/etc/otel-collector-config.yml:ro"
-      - "${OTEL_COLLECTOR_DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock:ro"
-      - "${OTEL_COLLECTOR_DOCKER_LOG_PATH:-/var/lib/docker/containers}:/var/lib/docker/containers:ro"
-    user: root
+      - &docker_socket "${OTEL_COLLECTOR_DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock:ro"
     group_add:
       # NOTE: (jpd) The GID of the `docker` group on the host. Find it with: `stat -c '%g' /var/run/docker.sock`
       - "${OTEL_DOCKER_GID:-989}"
@@ -185,8 +185,31 @@ services:
       - observability
       - default
 
+  logspout:
+    image: "gliderlabs/logspout:v3.2.14"
+    init: true
+    hostname: logspout
+    restart: unless-stopped
+    profiles:
+      - observability
+      - signoz
+      - collector
+      - logspout
+    networks:
+      - observability
+    environment:
+      SYSLOG_FORMAT: rfc5424
+    volumes:
+      - *docker_socket
+      - "logspout_route_data:/mnt/routes"
+    command: "tcp://otel-collector:5140?filter.labels=com.docker.compose.project:growth"
+    depends_on:
+      otel-collector:
+        condition: service_started
+
 volumes:
   clickhouse_data: {}
+  logspout_route_data: {}
   signoz_data: {}
   zookeeper_data: {}
 
