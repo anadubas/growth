@@ -136,3 +136,7 @@ The application emits telemetry events to monitor user interactions and business
 * `[:growth, :reference_data, :chart, :stop]` - Emitted when reference data loading for charts completes
   - **Measurements**: `%{duration: native_time(), monotonic_time: integer()}`
   - **Metadata**: `%{age_in_months: number(), gender: String.t(), data_type: atom(), success: boolean(), reason: String.t() | nil}`
+
+## Observability
+
+More details about the system observability can be found in the [architecture documentation](./ARCHITECTURE_O11Y.md).
