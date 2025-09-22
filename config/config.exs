@@ -31,6 +31,8 @@ config :growth, GrowthWeb.Endpoint,
 # at the `config/runtime.exs`.
 config :growth, Growth.Mailer, adapter: Swoosh.Adapters.Local
 
+config :growth, Growth.PromEx, disabled: true
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",

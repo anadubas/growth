@@ -168,9 +168,15 @@ services:
       - observability
       - signoz
       - collector
+    expose:
+      - 8082/tcp
     command: ["--config=/etc/otel-collector-config.yml"]
     volumes:
       - "./config/otel-collector/config.yml:/etc/otel-collector-config.yml:ro"
+      - &docker_socket "${OTEL_COLLECTOR_DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock:ro"
+    group_add:
+      # NOTE: (jpd) The GID of the `docker` group on the host. Find it with: `stat -c '%g' /var/run/docker.sock`
+      - "${OTEL_DOCKER_GID:-989}"
     depends_on:
       <<: *setup_depends
       signoz:
@@ -179,8 +185,33 @@ services:
       - observability
       - default
 
+  # NOTE: (jpd) Based on: https://signoz.io/blog/logspout-signoz-setup/
+  logspout:
+    image: "pavanputhra/logspout-signoz:2025.07.19-887dfeb"
+    init: true
+    hostname: logspout
+    restart: unless-stopped
+    profiles:
+      - observability
+      - signoz
+      - collector
+      - logspout
+    networks:
+      - observability
+    environment:
+      ENV: prod
+      SIGNOZ_LOG_ENDPOINT: "http://otel-collector:8082"
+    volumes:
+      - *docker_socket
+      - "logspout_route_data:/mnt/routes"
+    command: "signoz://otel-collector:8082?filter.labels=com.docker.compose.project:growth%2Ccom.docker.compose.service:growth"
+    depends_on:
+      otel-collector:
+        condition: service_started
+
 volumes:
   clickhouse_data: {}
+  logspout_route_data: {}
   signoz_data: {}
   zookeeper_data: {}
 
