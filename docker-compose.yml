@@ -37,10 +37,11 @@ services:
     ports:
       - "${LIVE_PORT:-:8080}"
     environment:
-      LIVEBOOK_PASSWORD: "${LIVEBOOK_PASSWORD:-some_salt}"
+      # NOTE: (jpd) The `LIVEBOOK_PASSWORD` must be at least 12 characters long. Can be generated with `openssl rand -hex 12`
+      LIVEBOOK_PASSWORD: "${LIVEBOOK_PASSWORD:-19ec878a6244c686de2eac0b}"
       LIVEBOOK_COOKIE: "${LIVEBOOK_COOKIE:-some_cookie}"
-      LIVEBOOK_NODE: "${LIVEBOOK_NODE:-live}"
-      LIVEBOOK_SECRET_KEY_BASE: "${LIVEBOOK_SECRET_KEY_BASE:-some_key_base}"
+      # NOTE: (jpd) The `LIVEBOOK_SECRET_KEY_BASE` must be at least 64 characters long. Can be generated with `openssl rand -base64 48`
+      LIVEBOOK_SECRET_KEY_BASE: "${LIVEBOOK_SECRET_KEY_BASE:-aoGX5w1paBZX4WBOpLRN7YHmEJjN7ybqEavsWly91EzrY44dYN4P2vIjm+2sD76F}"
       LIVEBOOK_HOME: /data
     volumes:
       - "live_data:/data"
