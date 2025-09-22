@@ -23,6 +23,7 @@ services:
       PHX_HOST: "${GROWTH_PHX_HOST:-127.0.0.1}"
       PHX_PORT: "${GROWTH_PHX_PORT:-4000}"
       PHX_SCHEME: "${GROWTH_PHX_SCHEME:-http}"
+      RELEASE_DISTRIBUTION: name
   live:
     image: "ghcr.io/livebook-dev/livebook:0.17.2"
     init: true
