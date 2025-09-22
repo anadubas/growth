@@ -169,7 +169,7 @@ services:
       - signoz
       - collector
     expose:
-      - 5140/tcp
+      - 8082/tcp
     command: ["--config=/etc/otel-collector-config.yml"]
     volumes:
       - "./config/otel-collector/config.yml:/etc/otel-collector-config.yml:ro"
@@ -185,8 +185,9 @@ services:
       - observability
       - default
 
+  # NOTE: (jpd) Based on: https://signoz.io/blog/logspout-signoz-setup/
   logspout:
-    image: "gliderlabs/logspout:v3.2.14"
+    image: "pavanputhra/logspout-signoz:2025.07.19-887dfeb"
     init: true
     hostname: logspout
     restart: unless-stopped
@@ -198,11 +199,12 @@ services:
     networks:
       - observability
     environment:
-      SYSLOG_FORMAT: rfc5424
+      ENV: prod
+      SIGNOZ_LOG_ENDPOINT: "http://otel-collector:8082"
     volumes:
       - *docker_socket
       - "logspout_route_data:/mnt/routes"
-    command: "tcp://otel-collector:5140?filter.labels=com.docker.compose.project:growth"
+    command: "signoz://otel-collector:8082?filter.labels=com.docker.compose.project:growth%2Ccom.docker.compose.service:growth"
     depends_on:
       otel-collector:
         condition: service_started

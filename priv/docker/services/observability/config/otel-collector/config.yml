@@ -26,15 +26,9 @@ receivers:
               labels:
                 job_name: "growth-app"
 
-  syslog:
-    tcp:
-      listen_address: "0.0.0.0:5140"
-    protocol: rfc5424
-    location: UTC
-    operators:
-      - type: move
-        from: attributes.message
-        to: body
+  httplogreceiver/json:
+    endpoint: "0.0.0.0:8082"
+    source: json
 
 processors:
   batch:
@@ -125,7 +119,7 @@ service:
 
   pipelines:
     logs:
-      receivers: [otlp, syslog]
+      receivers: [otlp, httplogreceiver/json]
       processors: [memory_limiter, batch]
       exporters: [clickhouselogsexporter, debug]
 
