@@ -2,4 +2,6 @@
 set -eu
 
 cd -P -- "$(dirname -- "$0")"
+
+export RELEASE_NODE="${HOSTNAME}@$(hostname -i | cut -d ' ' -f1)"
 PHX_SERVER=true exec ./growth start
