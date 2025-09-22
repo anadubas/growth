@@ -121,17 +121,17 @@ service:
     logs:
       receivers: [otlp, httplogreceiver/json]
       processors: [memory_limiter, batch]
-      exporters: [clickhouselogsexporter, debug]
+      exporters: [clickhouselogsexporter]
 
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [signozclickhousemetrics, debug]
+      exporters: [signozclickhousemetrics]
 
     metrics/prometheus:
       receivers: [prometheus]
       processors: [memory_limiter, batch]
-      exporters: [signozclickhousemetrics, debug]
+      exporters: [signozclickhousemetrics]
 
     traces:
       receivers: [otlp]
