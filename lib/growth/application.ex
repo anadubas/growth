@@ -7,6 +7,9 @@ defmodule Growth.Application do
 
   @impl true
   def start(_type, _args) do
+    # Initialize OpenTelemetry instrumentations
+    OpentelemetryPhoenix.setup(adapter: :bandit)
+
     children = [
       Growth.PromEx,
       GrowthWeb.Telemetry,
