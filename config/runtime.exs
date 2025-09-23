@@ -20,6 +20,26 @@ if System.get_env("PHX_SERVER") do
   config :growth, GrowthWeb.Endpoint, server: true
 end
 
+# OpenTelemetry Configuration
+config :opentelemetry,
+  span_processor: :batch,
+  traces_exporter: :otlp,
+  resource: [
+    service: %{
+      name: "growth-app",
+      version: "0.1.0"
+    },
+    deployment: %{
+      environment: to_string(config_env())
+    }
+  ]
+
+config :opentelemetry_exporter,
+  otlp_protocol: :http_protobuf,
+  otlp_endpoint: System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") || "http://otel-collector:4318",
+  otlp_headers: [],
+  otlp_compression: :gzip
+
 config :logger, :default_handler, formatter: LoggerJSON.Formatters.Basic.new(metadata: :all)
 
 if config_env() == :prod do
