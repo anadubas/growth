@@ -109,4 +109,24 @@ if config_env() == :prod do
     manua_metrics_start_delay: :no_delay,
     grafana: :disabled,
     metrics_server: :disabled
+
+  config :opentelemetry,
+    span_processor: :batch,
+    traces_exporter: :otlp,
+    resource: [
+      service: %{
+        name: "growth-app",
+        version: "0.1.0"
+      },
+      deployment: %{
+        environment: to_string(config_env())
+      }
+    ]
+
+  config :opentelemetry_exporter,
+    otlp_protocol: :http_protobuf,
+    otlp_endpoint: System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") || "http://otel-collector:4318",
+    otlp_headers: [],
+    otlp_compression: :gzip,
+    ssl_options: [verify: :verify_none]
 end
