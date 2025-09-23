@@ -55,6 +55,7 @@ defmodule Growth.MixProject do
       {:nimble_csv, "~> 1.3.0"},
       {:opentelemetry, "~> 1.6.0"},
       {:opentelemetry_api, "~> 1.4.0"},
+      {:opentelemetry_bandit, "~> 0.3.0"},
       {:opentelemetry_exporter, "~> 1.9.0"},
       {:opentelemetry_phoenix, "~> 2.0.0"},
       {:opentelemetry_telemetry, "~> 1.1.0"},
