@@ -64,6 +64,15 @@ defmodule Growth.Measure do
       |> add_results(child)
 
     :telemetry.execute([:growth, :measure, :submitted], %{count: 1}, %{
+      # Add OpenTelemetry-compatible attributes
+      "measure.weight" => measure.weight,
+      "measure.height" => measure.height,
+      "measure.bmi" => measure.bmi,
+      "measure.head_circumference" => measure.head_circumference,
+      "child.gender" => child.gender,
+      "child.age_months" => child.age_in_months,
+      "otel.kind" => "event",
+      # Existing attributes (keep these)
       age_in_months: child.age_in_months,
       gender: child.gender,
       measure_date: child.measure_date,

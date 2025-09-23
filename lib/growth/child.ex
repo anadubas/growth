@@ -61,8 +61,14 @@ defmodule Growth.Child do
       |> add_age_in_decimal()
 
     :telemetry.execute([:growth, :child, :created], %{count: 1}, %{
+      # Add OpenTelemetry-compatible attributes
+      "child.gender" => child.gender,
+      "child.age_months" => child.age_in_months,
+      "child.birthday" => to_string(child.birthday),
+      "measure.date" => to_string(child.measure_date),
+      "otel.kind" => "event",
+      # Existing attributes (keep these)
       age_in_months: child.age_in_months,
-      age_in_decimal: child.age_in_decimal,
       gender: child.gender,
       measure_date: child.measure_date
     })

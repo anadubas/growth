@@ -68,8 +68,7 @@ defmodule Growth.Calculate do
   """
   @spec results(Measure.t(), Child.t()) :: Measure.t()
   def results(
-        %Measure{weight: weight, height: height, head_circumference: head_circumference, bmi: bmi} =
-          growth,
+        %Measure{weight: weight, height: height, head_circumference: head_circumference, bmi: bmi} = growth,
         %Child{} = child
       ) do
     :telemetry.span(
@@ -80,6 +79,13 @@ defmodule Growth.Calculate do
         measure_date: child.measure_date
       },
       fn ->
+        OpenTelemetry.Tracer.add_event("calculation.started", %{
+          "input.has_weight" => not is_nil(growth.weight),
+          "input.has_height" => not is_nil(growth.height),
+          "input.has_bmi" => not is_nil(growth.bmi),
+          "input.has_head_circumference" => not is_nil(growth.head_circumference)
+        })
+
         weight_result = calculate_result(weight, :weight, child)
         height_result = calculate_result(height, :height, child)
         bmi_result = calculate_result(bmi, :bmi, child)
@@ -93,6 +99,11 @@ defmodule Growth.Calculate do
           head_circumference_result: head_circumference_result,
           bmi_result: bmi_result
         }
+
+        OpenTelemetry.Tracer.add_event("calculation.completed", %{
+          "results.calculated_measures" => count_successful_results(result),
+          "results.has_errors" => has_calculation_errors?(result)
+        })
 
         measure = %Measure{growth | results: result}
 
@@ -109,16 +120,18 @@ defmodule Growth.Calculate do
          }}
       end
     )
+  end
 
-    %Measure{
-      growth
-      | results: %{
-          weight: calculate_result(weight, :weight, child),
-          height: calculate_result(height, :height, child),
-          head_circumference: calculate_result(head_circumference, :head_circumference, child),
-          bmi: calculate_result(bmi, :bmi, child)
-        }
-    }
+  defp count_successful_results(result) do
+    result
+    |> Map.values()
+    |> Enum.count(&(&1 != "no results"))
+  end
+
+  defp has_calculation_errors?(result) do
+    result
+    |> Map.values()
+    |> Enum.any?(&(&1 == "no results"))
   end
 
   @doc """
@@ -155,6 +168,8 @@ defmodule Growth.Calculate do
               |> add_classification(data_type)
               |> format_result()
 
+            OpenTelemetry.Tracer.set_status(:ok)
+
             {result,
              %{
                age_in_months: child.age_in_months,
@@ -164,7 +179,10 @@ defmodule Growth.Calculate do
                success: true
              }}
 
-          {:error, _} ->
+          {:error, reason} ->
+            OpenTelemetry.Tracer.record_exception(%RuntimeError{message: to_string(reason)})
+            OpenTelemetry.Tracer.set_status(:error, to_string(reason))
+
             {"no data found",
              %{
                age_in_months: child.age_in_months,

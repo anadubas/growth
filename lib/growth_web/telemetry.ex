@@ -97,6 +97,9 @@ defmodule GrowthWeb.Telemetry do
   end
 
   defp attach_events do
+    # Set up OpenTelemetry bridges for existing spans
+    setup_otel_bridges()
+
     case Application.get_env(:growth, :env) do
       :dev ->
         :telemetry.attach_many("growth-logger", all_events(), &handle_event/4, nil)
@@ -104,6 +107,45 @@ defmodule GrowthWeb.Telemetry do
       _ ->
         :ok
     end
+  end
+
+  defp setup_otel_bridges do
+    # Bridge existing telemetry spans to OpenTelemetry
+    :opentelemetry_telemetry.create_telemetry_span(
+      [:growth, :calculation],
+      %{
+        description: "Growth calculation operations",
+        kind: :internal,
+        attributes: [:age_in_months, :gender, :measure_date]
+      }
+    )
+
+    :opentelemetry_telemetry.create_telemetry_span(
+      [:growth, :calculation, :measure],
+      %{
+        description: "Individual measure calculation",
+        kind: :internal,
+        attributes: [:age_in_months, :gender, :data_type, :success]
+      }
+    )
+
+    :opentelemetry_telemetry.create_telemetry_span(
+      [:growth, :reference_data, :load],
+      %{
+        description: "Reference data loading",
+        kind: :internal,
+        attributes: [:data_type, :success]
+      }
+    )
+
+    :opentelemetry_telemetry.create_telemetry_span(
+      [:growth, :reference_data, :chart],
+      %{
+        description: "Reference chart data loading",
+        kind: :internal,
+        attributes: [:data_type, :success]
+      }
+    )
   end
 
   defp all_events do

@@ -1,4 +1,5 @@
 defmodule Growth.Zscore do
+  require OpenTelemetry.Tracer
   @moduledoc """
   Provides functionality to calculate Z-scores using the LMS method.
 
@@ -34,9 +35,16 @@ defmodule Growth.Zscore do
   """
   @spec calculate(number(), number(), number(), number()) :: number()
   def calculate(measure, l, m, s) do
-    measure
-    |> raw_zscore(l, m, s)
-    |> adjust_result(measure, l, m, s)
+    OpenTelemetry.Tracer.with_span("growth.zscore.calculate", %{
+      "zscore.measure" => measure,
+      "zscore.reference_l" => l,
+      "zscore.reference_m" => m,
+      "zscore.reference_s" => s
+    }) do
+      measure
+      |> raw_zscore(l, m, s)
+      |> adjust_result(measure, l, m, s)
+    end
   end
 
   @doc false
