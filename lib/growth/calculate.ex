@@ -16,6 +16,7 @@ defmodule Growth.Calculate do
   alias Growth.Measure
   alias Growth.Percentile
   alias Growth.Zscore
+  alias Growth.StructuredLogger
   require :telemetry
 
   @days_in_month 30.4375
@@ -159,8 +160,22 @@ defmodule Growth.Calculate do
         data_type: data_type
       },
       fn ->
+        StructuredLogger.info("Starting growth calculation", %{
+          calculation_data_type: data_type,
+          calculation_measure: measure,
+          child_age_months: child.age_in_months,
+          child_gender: child.gender
+        })
+
         case LoadReference.load_data(data_type, child) do
           {:ok, data} ->
+            StructuredLogger.debug("Reference data loaded successfully", %{
+              reference_l: data.l,
+              reference_m: data.m,
+              reference_s: data.s,
+              data_type: data_type
+            })
+
             result =
               data
               |> add_zscore(measure)
@@ -168,29 +183,23 @@ defmodule Growth.Calculate do
               |> add_classification(data_type)
               |> format_result()
 
-            OpenTelemetry.Tracer.set_status(:ok)
+            StructuredLogger.info("Calculation completed", %{
+              result_zscore: result.zscore,
+              result_percentile: result.percentile,
+              result_classification: result.classification,
+              calculation_success: true
+            })
 
-            {result,
-             %{
-               age_in_months: child.age_in_months,
-               data_type: data_type,
-               gender: child.gender,
-               measure_date: child.measure_date,
-               success: true
-             }}
+            {result, success_metadata}
 
           {:error, reason} ->
-            OpenTelemetry.Tracer.record_exception(%RuntimeError{message: to_string(reason)})
-            OpenTelemetry.Tracer.set_status(:error, to_string(reason))
+            StructuredLogger.error("Reference data loading failed", %{
+              error_reason: to_string(reason),
+              calculation_data_type: data_type,
+              calculation_success: false
+            })
 
-            {"no data found",
-             %{
-               age_in_months: child.age_in_months,
-               data_type: data_type,
-               gender: child.gender,
-               measure_date: child.measure_date,
-               success: false
-             }}
+            {"no data found", error_metadata}
         end
       end
     )

@@ -56,9 +56,21 @@ config :tailwind,
   ]
 
 # Configures Elixir's Logger
-config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+config :logger, :default_handler,
+  config: %{
+    formatter: {LoggerJSON.Formatters.BasicLogger, %{
+      metadata: [:trace_id, :span_id, :user_id, :request_id]
+    }}
+  }
+
+# Add OpenTelemetry correlation
+config :opentelemetry,
+  processors: [
+    {:otel_batch_processor, %{
+      exporter: {:opentelemetry_exporter, %{}},
+      scheduled_delay_ms: 5_000
+    }}
+  ]
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason

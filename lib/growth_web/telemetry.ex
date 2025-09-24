@@ -168,8 +168,11 @@ defmodule GrowthWeb.Telemetry do
   end
 
   defp handle_event(event, measurements, metadata, _config) do
-    Logger.info("[Telemetry] #{inspect(event)}
-  Measurements: #{inspect(measurements)}
-  Metadata: #{inspect(metadata)}")
+    Growth.StructuredLogger.info("Telemetry event", %{
+      telemetry_event: event,
+      measurements: measurements,
+      metadata: metadata,
+      event_type: "telemetry"
+    })
   end
 end

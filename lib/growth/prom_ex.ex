@@ -63,10 +63,10 @@ defmodule Growth.PromEx do
       Plugins.Application,
       Plugins.Beam,
       {Plugins.Phoenix, router: GrowthWeb.Router, endpoint: GrowthWeb.Endpoint},
-      Plugins.PhoenixLiveView
+      Plugins.PhoenixLiveView,
 
-      # Add your own PromEx metrics plugins
-      # Growth.Users.PromExPlugin
+      # Add our custom Growth metrics plugin
+      Growth.PromExPlugin
     ]
   end
 
@@ -81,18 +81,14 @@ defmodule Growth.PromEx do
   @impl true
   def dashboards do
     [
-      # PromEx built in Grafana dashboards
-      # {:prom_ex, "application.json"},
-      # {:prom_ex, "beam.json"}
-      # {:prom_ex, "phoenix.json"},
-      # {:prom_ex, "ecto.json"},
-      # {:prom_ex, "oban.json"},
-      # {:prom_ex, "phoenix_live_view.json"},
-      # {:prom_ex, "absinthe.json"},
-      # {:prom_ex, "broadway.json"},
+      # Enable PromEx built-in dashboards
+      {:prom_ex, "application.json"},
+      {:prom_ex, "beam.json"},
+      {:prom_ex, "phoenix.json"},
+      {:prom_ex, "phoenix_live_view.json"}
 
-      # Add your dashboard definitions here with the format: {:otp_app, "path_in_priv"}
-      # {:growth, "/grafana_dashboards/user_metrics.json"}
+      # Add custom Growth dashboard when ready
+      # {:growth, "/grafana_dashboards/growth_metrics.json"}
     ]
   end
 end
