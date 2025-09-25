@@ -16,6 +16,7 @@ defmodule Growth.Calculate do
   alias Growth.Measure
   alias Growth.Percentile
   alias Growth.Zscore
+  alias Growth.StructuredLogger
   require :telemetry
 
   @days_in_month 30.4375
@@ -68,8 +69,7 @@ defmodule Growth.Calculate do
   """
   @spec results(Measure.t(), Child.t()) :: Measure.t()
   def results(
-        %Measure{weight: weight, height: height, head_circumference: head_circumference, bmi: bmi} =
-          growth,
+        %Measure{weight: weight, height: height, head_circumference: head_circumference, bmi: bmi} = growth,
         %Child{} = child
       ) do
     :telemetry.span(
@@ -80,6 +80,13 @@ defmodule Growth.Calculate do
         measure_date: child.measure_date
       },
       fn ->
+        OpenTelemetry.Tracer.add_event("calculation.started", %{
+          "input.has_weight" => not is_nil(growth.weight),
+          "input.has_height" => not is_nil(growth.height),
+          "input.has_bmi" => not is_nil(growth.bmi),
+          "input.has_head_circumference" => not is_nil(growth.head_circumference)
+        })
+
         weight_result = calculate_result(weight, :weight, child)
         height_result = calculate_result(height, :height, child)
         bmi_result = calculate_result(bmi, :bmi, child)
@@ -93,6 +100,11 @@ defmodule Growth.Calculate do
           head_circumference_result: head_circumference_result,
           bmi_result: bmi_result
         }
+
+        OpenTelemetry.Tracer.add_event("calculation.completed", %{
+          "results.calculated_measures" => count_successful_results(result),
+          "results.has_errors" => has_calculation_errors?(result)
+        })
 
         measure = %Measure{growth | results: result}
 
@@ -109,16 +121,18 @@ defmodule Growth.Calculate do
          }}
       end
     )
+  end
 
-    %Measure{
-      growth
-      | results: %{
-          weight: calculate_result(weight, :weight, child),
-          height: calculate_result(height, :height, child),
-          head_circumference: calculate_result(head_circumference, :head_circumference, child),
-          bmi: calculate_result(bmi, :bmi, child)
-        }
-    }
+  defp count_successful_results(result) do
+    result
+    |> Map.values()
+    |> Enum.count(&(&1 != "no results"))
+  end
+
+  defp has_calculation_errors?(result) do
+    result
+    |> Map.values()
+    |> Enum.any?(&(&1 == "no results"))
   end
 
   @doc """
@@ -146,8 +160,22 @@ defmodule Growth.Calculate do
         data_type: data_type
       },
       fn ->
+        StructuredLogger.info("Starting growth calculation", %{
+          calculation_data_type: data_type,
+          calculation_measure: measure,
+          child_age_months: child.age_in_months,
+          child_gender: child.gender
+        })
+
         case LoadReference.load_data(data_type, child) do
           {:ok, data} ->
+            StructuredLogger.debug("Reference data loaded successfully", %{
+              reference_l: data.l,
+              reference_m: data.m,
+              reference_s: data.s,
+              data_type: data_type
+            })
+
             result =
               data
               |> add_zscore(measure)
@@ -155,24 +183,23 @@ defmodule Growth.Calculate do
               |> add_classification(data_type)
               |> format_result()
 
-            {result,
-             %{
-               age_in_months: child.age_in_months,
-               data_type: data_type,
-               gender: child.gender,
-               measure_date: child.measure_date,
-               success: true
-             }}
+            StructuredLogger.info("Calculation completed", %{
+              result_zscore: result.zscore,
+              result_percentile: result.percentile,
+              result_classification: result.classification,
+              calculation_success: true
+            })
 
-          {:error, _} ->
-            {"no data found",
-             %{
-               age_in_months: child.age_in_months,
-               data_type: data_type,
-               gender: child.gender,
-               measure_date: child.measure_date,
-               success: false
-             }}
+            {result, success_metadata}
+
+          {:error, reason} ->
+            StructuredLogger.error("Reference data loading failed", %{
+              error_reason: to_string(reason),
+              calculation_data_type: data_type,
+              calculation_success: false
+            })
+
+            {"no data found", error_metadata}
         end
       end
     )

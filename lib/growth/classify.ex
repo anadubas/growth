@@ -1,4 +1,5 @@
 defmodule Growth.Classify do
+  require OpenTelemetry.Tracer
   @moduledoc """
   Provides functionality to classify anthropometric measurements.
 
@@ -24,7 +25,19 @@ defmodule Growth.Classify do
       "Estatura adequada"
   """
   @spec calculate(atom(), number()) :: String.t()
-  def calculate(:weight, z) do
+  def calculate(data_type, zscore) do
+    OpenTelemetry.Tracer.with_span("growth.classify.calculate", %{
+      "classify.data_type" => to_string(data_type),
+      "classify.input_zscore" => zscore
+    }) do
+      result = do_calculate(data_type, zscore)
+
+      OpenTelemetry.Tracer.set_attribute("classify.result", result)
+      result
+    end
+  end
+
+  defp do_calculate(:weight, z) do
     cond do
       z < -3 -> "Baixo peso grave"
       z < -2 -> "Baixo peso"
@@ -34,7 +47,7 @@ defmodule Growth.Classify do
     end
   end
 
-  def calculate(:height, z) do
+  defp do_calculate(:height, z) do
     cond do
       z < -3 -> "Muito baixa estatura"
       z < -2 -> "Baixa estatura"
@@ -42,7 +55,7 @@ defmodule Growth.Classify do
     end
   end
 
-  def calculate(:bmi, z) do
+  defp do_calculate(:bmi, z) do
     cond do
       z < -3 -> "Magreza acentuada"
       z < -2 -> "Magreza"
@@ -53,7 +66,7 @@ defmodule Growth.Classify do
     end
   end
 
-  def calculate(:head_circumference, z) do
+  defp do_calculate(:head_circumference, z) do
     cond do
       z < -2 -> "Microcefalia"
       z > 2 -> "Macrocefalia"
@@ -61,7 +74,7 @@ defmodule Growth.Classify do
     end
   end
 
-  def calculate(_data_type, _z) do
+  defp do_calculate(_data_type, _z) do
     "Sem classificação"
   end
 end
