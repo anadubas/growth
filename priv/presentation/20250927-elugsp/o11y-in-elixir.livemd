@@ -1,0 +1,1247 @@
+<!-- livebook:{"file_entries":[{"name":"ana_dubas.png","type":"attachment"},{"name":"joao_dubas.png","type":"attachment"}]} -->
+
+# Observabilidade em Elixir: Um Guia Prático para Métricas, Logs e Traces
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.17.0"},
+  {:jason, "~> 1.4"},
+  {:req, "~> 0.4"}
+])
+```
+
+## Growth-App
+
+<!-- livebook:{"attrs":"eyJhc3NpZ25fdG8iOiIiLCJjb2RlIjoiOm9rIiwiY29va2llX3NlY3JldCI6IkdST1dUSF9SRUxFQVNFX0NPT0tJRSIsImNvb2tpZV9zb3VyY2UiOiJzZWNyZXQiLCJub2RlX3NvdXJjZSI6InRleHQiLCJub2RlX3RleHQiOiJncm93dGhAMTcyLjI1LjAuMiJ9","chunks":null,"kind":"Elixir.Kino.RemoteExecutionCell","livebook_object":"smart_cell"} -->
+
+```elixir
+require Kino.RPC
+node = :"growth@172.25.0.2"
+Node.set_cookie(node, String.to_atom(System.fetch_env!("LB_GROWTH_RELEASE_COOKIE")))
+Kino.RPC.eval_string(node, ~S":ok", file: __ENV__.file)
+```
+
+Cansado de não saber o que sua aplicação `Elixir` está fazendo em produção? Nesta palestra, vamos dar um pontapé inicial no mundo da observabilidade de forma prática e sem complicação. Você vai ver como o :telemetry nos ajuda a criar logs melhores, coletar métricas com `PromEx` e até começar a brincar com tracing usando `OpenTelemetry`.
+
+## Quem somos
+
+![](files/joao_dubas.png)
+
+<!-- livebook:{"break_markdown":true} -->
+
+![](files/ana_dubas.png)
+
+## O que é Observabilidade?
+
+O que acontece com a sua aplicação quando ela vai para produção?
+
+### Os três pilares da observabilidade:
+
+* **Logs**
+
+São os registros de eventos. É o que aconteceu no sistema, em texto. Por exemplo: `Usuário 123 fez login`, ou `Erro de timeout ao acessar o banco`. Os logs contam a história passo a passo.
+
+* **Métricas**
+
+São valores numéricos que a gente consegue acompanhar ao longo do tempo. Quantas requisições por segundo, qual a latência média, quanto de CPU a aplicação está usando. Elas ajudam a ver tendências e padrões.
+
+* **Traces**
+
+Já os traces permitem seguir o caminho de uma requisição. Quando um usuário faz uma chamada, o trace mostra por onde ela passou: gateway → API → banco → outro serviço. Isso ajuda muito a achar gargalos e entender onde está lento.
+
+E por que isso importa? Porque sem observabilidade acontece o clássico: a aplicação caiu e ninguém sabe por quê. A equipe fica no escuro, testando hipóteses às cegas. Com observabilidade, a gente tem ferramentas pra diagnosticar rápido e resolver com confiança.
+
+### Qual a importância da observabilidade?
+
+Aplicações modernas são distribuídas, rodam em containers, escalam em vários serviços. Quando dá problema, não é mais tão simples abrir um log no servidor e encontrar a causa.
+
+**Benefícios principais:**
+
+*Reduz tempo de diagnóstico (MTTR)*
+
+Com observabilidade, a gente identifica rápido o que deu errado. Sem ela, podemos gastar horas ou dias investigando.
+
+*Melhora a confiabilidade do sistema*
+
+Quando conseguimos ver métricas de performance e erros em tempo real, detectamos falhas antes mesmo do usuário perceber.
+
+*Ajuda a tomar decisões técnicas e de negócio*
+
+Métricas não servem só para incidentes. Elas ajudam a ver tendências de uso: se uma rota é muito chamada, se precisamos de mais recursos, ou até se uma funcionalidade não está sendo usada.
+
+*Facilita a colaboração entre times*
+
+Com logs, métricas e traces visíveis para todos, o time inteiro fala a mesma língua. Infra, backend, frontend conseguem entender o que está acontecendo.
+
+Em resumo: observabilidade não é luxo. É o que garante que a aplicação continue saudável, os usuários satisfeitos e o time produtivo. Sem isso, estamos sempre correndo atrás do prejuízo.
+
+## Instrumentando a aplicação com Telemetry
+
+### O que é Telemetry?
+
+O `Telemetry` é uma biblioteca padrão no ecossistema Elixir para instrumentação de aplicações. Ele permite que diferentes partes do sistema emitam eventos sobre o que está acontecendo internamente, sem acoplamento entre quem emite e quem consome esses eventos. Isso é fundamental para observabilidade, pois nos permite coletar métricas, logs e, futuramente, traces, de forma padronizada e eficiente.
+
+### Por que usar Telemetry?
+
+**Desacoplamento**
+
+O código de negócio não precisa saber quem está coletando ou processando os dados.
+
+**Performance**
+
+Telemetry é extremamente leve, não impactando a performance da aplicação.
+
+**Flexibilidade**
+
+Podemos conectar diferentes ferramentas de métricas, logs ou tracing sem alterar o código da aplicação.
+
+### Como instrumentar com Telemetry?
+
+No nosso projeto, usamos principalmente o `:telemetry.span/3` para medir a duração de operações importantes, como cálculos de métricas de crescimento. O `span` emite dois eventos: um no início e outro no fim da operação, permitindo medir tempo e capturar informações contextuais.
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+
+    :telemetry.span(
+      [:growth, :calculation],
+      %{
+        age_in_months: child.age_in_months,
+        gender: child.gender,
+        measure_date: child.measure_date
+      },
+      fn ->
+        weight_result = calculate_result(weight, :weight, child)
+        height_result = calculate_result(height, :height, child)
+        bmi_result = calculate_result(bmi, :bmi, child)
+
+        head_circumference_result =
+          calculate_result(head_circumference, :head_circumference, child)
+
+        result = %{
+          weight_result: weight_result,
+          height_result: height_result,
+          head_circumference_result: head_circumference_result,
+          bmi_result: bmi_result
+        }
+
+        measure = %Measure{growth | results: result}
+
+        {measure, %{count: 1},
+         %{
+           age_in_months: child.age_in_months,
+           gender: child.gender,
+           has_bmi_result: bmi_result != "no results",
+           has_head_circumference_result: head_circumference_result != "no results",
+           has_height_result: height_result != "no results",
+           has_weight_result: weight_result != "no results",
+           measure_date: child.measure_date,
+           success: true
+         }}
+      end
+    )
+
+
+```
+
+Aqui, emitimos um evento chamado `[:growth, :calculation]`, passando dados relevantes como idade, gênero e sucesso da operação. Esses eventos podem ser consumidos por qualquer handler Telemetry, como exportadores de métricas ou sistemas de logs.
+
+**Boas práticas**
+
+* Instrumente pontos críticos: foque em operações que afetam performance ou são essenciais para o negócio.
+* Use nomes de eventos claros e hierárquicos, como `[:growth, :calculation]`.
+* Sempre envie metadados úteis nos eventos, como identificadores, parâmetros e resultados.
+
+### Como ficou nosso módulo Telemetry
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+defmodule GrowthWeb.Telemetry do
+  use Supervisor
+  import Telemetry.Metrics
+  require Logger
+
+  def start_link(arg) do
+    Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
+  end
+
+  @impl true
+  def init(_arg) do
+    children = [
+      # Telemetry poller will execute the given period measurements
+      # every 10_000ms. Learn more here: https://hexdocs.pm/telemetry_metrics
+      {:telemetry_poller, measurements: periodic_measurements(), period: 10_000}
+      # Add reporters as children of your supervision tree.
+      # {Telemetry.Metrics.ConsoleReporter, metrics: metrics()}
+    ]
+
+    # Attach a logger for all our events.
+    # This is useful for development and debugging.
+    :ok = attach_events()
+
+    Supervisor.init(children, strategy: :one_for_one)
+  end
+
+  def metrics do
+    [
+      # Phoenix Metrics
+      summary("phoenix.endpoint.start.system_time",
+        unit: {:native, :millisecond}
+      ),
+      summary("phoenix.endpoint.stop.duration",
+        unit: {:native, :millisecond}
+      ),
+      summary("phoenix.router_dispatch.start.system_time",
+        tags: [:route],
+        unit: {:native, :millisecond}
+      ),
+      summary("phoenix.router_dispatch.exception.duration",
+        tags: [:route],
+        unit: {:native, :millisecond}
+      ),
+      summary("phoenix.router_dispatch.stop.duration",
+        tags: [:route],
+        unit: {:native, :millisecond}
+      ),
+      summary("phoenix.socket_connected.duration",
+        unit: {:native, :millisecond}
+      ),
+      summary("phoenix.channel_joined.duration",
+        unit: {:native, :millisecond}
+      ),
+      summary("phoenix.channel_handled_in.duration",
+        tags: [:event],
+        unit: {:native, :millisecond}
+      ),
+
+      # == Growth Metrics ==
+
+      # User Journey Events
+      counter("growth.child.created.count"),
+      counter("growth.measure.submitted.count"),
+
+      # Business Logic Span Events
+      summary("growth.calculation.stop.duration",
+        unit: {:native, :millisecond}
+      ),
+      counter("growth.calculation.stop.count"),
+      summary("growth.calculation.measure.stop.duration",
+        # tags: [:data_type, :success],
+        unit: {:native, :millisecond}
+      ),
+      summary("growth.reference_data.load.stop.duration",
+        # tags: [:data_type, :success],
+        unit: {:native, :millisecond}
+      ),
+      summary("growth.reference_data.chart.stop.duration",
+        # tags: [:data_type, :success],
+        unit: {:native, :millisecond}
+      ),
+
+      # VM Metrics
+      summary("vm.memory.total", unit: {:byte, :kilobyte}),
+      summary("vm.total_run_queue_lengths.total"),
+      summary("vm.total_run_queue_lengths.cpu"),
+      summary("vm.total_run_queue_lengths.io")
+    ]
+  end
+
+  defp periodic_measurements do
+    [
+      # A module, function and arguments to be invoked periodically.
+      # This function must call :telemetry.execute/3 and a metric must be added above.
+      # {GrowthWeb, :count_users, []}
+    ]
+  end
+
+  defp attach_events do
+    case Application.get_env(:growth, :env) do
+      :dev ->
+        :telemetry.attach_many("growth-logger", all_events(), &handle_event/4, nil)
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp all_events do
+    [
+      # User Journey
+      [:growth, :child, :created],
+      [:growth, :measure, :submitted],
+      # [:growth, :results, :viewed],
+      # [:growth, :form, :reset],
+      # Spans (start, stop, exception)
+      [:growth, :calculation, :start],
+      [:growth, :calculation, :stop],
+      [:growth, :calculation, :measure, :start],
+      [:growth, :calculation, :measure, :stop],
+      [:growth, :reference_data, :load, :start],
+      [:growth, :reference_data, :load, :stop],
+      [:growth, :reference_data, :chart, :start],
+      [:growth, :reference_data, :chart, :stop]
+    ]
+  end
+
+  defp handle_event(event, measurements, metadata, _config) do
+    Logger.info("[Telemetry] #{inspect(event)}
+  Measurements: #{inspect(measurements)}
+  Metadata: #{inspect(metadata)}")
+  end
+end
+
+```
+
+### O que é o módulo GrowthWeb.Telemetry?
+
+Ele é o coração da nossa observabilidade. Ele coleta, organiza e expõe métricas e eventos, permitindo que a gente monitore, debugue e evolua a aplicação com confiança. Instrumentar com Telemetry é simples, eficiente e essencial.
+
+### Como funciona?
+
+**Supervisão e Polling**
+
+O módulo inicia um supervisor que inclui um `:telemetry_poller`. Esse poller executa medições periódicas, como métricas da VM, a cada 10 segundos.
+Podemos adicionar funções customizadas para serem chamadas periodicamente, por exemplo, para contar usuários ativos.
+
+**Definição de Métricas**
+
+A função `metrics/0` retorna uma lista de métricas que queremos coletar.
+Incluímos métricas do Phoenix (tempo de requisição, duração de handlers, etc.), métricas de negócio (quantidade de crianças criadas, medições submetidas, duração dos cálculos de crescimento) e métricas da VM (memória, filas de execução).
+
+Exemplo:
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+summary("growth.calculation.stop.duration", unit: {:native, :millisecond})
+counter("growth.child.created.count")
+```
+
+**Logs de Telemetry para Desenvolvimento**
+
+Em ambiente de desenvolvimento, o módulo se conecta a todos os eventos relevantes usando :telemetry.attach_many/4.
+O callback handle_event/4 registra no Logger todos os eventos, medições e metadados, facilitando o debug e a validação da instrumentação.
+
+Exemplo de log:
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+[Telemetry] [:growth, :calculation, :stop]
+Measurements: %{duration: 12345}
+Metadata: %{age_in_months: 12, gender: "female", success: true}
+```
+
+**Extensibilidade**
+
+O módulo está pronto para receber novos eventos e métricas. Basta adicionar novas entradas em `metrics/0` ou em `all_events/0`.
+Também é possível adicionar exportadores, como Prometheus, para enviar essas métricas para dashboards.
+
+### Por que isso é importante?
+
+**Visibilidade:** Sabemos o que está acontecendo na aplicação em tempo real.
+**Diagnóstico:** Identificamos gargalos, lentidão e erros rapidamente.
+**Evolução:** Podemos tomar decisões baseadas em dados, não em achismos.
+
+### Boas práticas demonstradas
+
+**Separação de métricas de negócio e técnicas:** Métricas de domínio (ex: cálculos de crescimento) e de infraestrutura (ex: memória da VM).
+**Logs estruturados e ricos em contexto:** Facilitam a análise e a correlação de eventos.
+**Facilidade de extensão:** O módulo é facilmente adaptável para novas necessidades de observabilidade.
+
+## Instrumentar logs, métricas e traces
+
+### Logs
+
+*O que são:* registros de eventos que aconteceram no sistema, geralmente em texto.
+
+*Para que servem:* ajudam a entender o que aconteceu e quando aconteceu.
+
+Exemplo:
+
+```
+"Usuário 123 fez login com sucesso"
+
+"Erro: timeout ao conectar no banco"
+```
+
+*Analogia:* um diário — cada página conta algo que ocorreu.
+
+### Métricas
+
+*O que são:* valores numéricos que mostram como o sistema se comporta ao longo do tempo.
+
+*Para que servem:* permitem ver tendências, padrões e comparar períodos.
+
+Exemplo:
+
+```
+200 requisições por segundo
+95% das requisições respondem em menos de 100 ms
+30% de CPU em uso
+```
+
+*Analogia:* os sinais vitais do paciente — batimento, pressão, temperatura.
+
+### Traces
+
+*O que são:* registros detalhados do caminho que uma requisição percorre dentro do sistema.
+
+*Para que servem:* mostram onde está lento, onde ocorreu erro e como serviços diferentes interagem.
+
+Exemplo:
+
+```
+Usuário chama /checkout
+Passa pelo API Gateway → Serviço de Pagamento → Banco de Dados
+Cada etapa tem duração e status registrados
+```
+
+*Analogia:* um mapa com o trajeto completo que a requisição fez.
+
+## Observabilidade na Prática: Logs, Métricas e Traces com Elixir, OpenTelemetry e SigNoz
+
+Adotamos uma arquitetura moderna baseada em OpenTelemetry e SigNoz, uma plataforma open-source para visualização e análise de logs, métricas e traces.
+
+### Arquitetura Geral
+
+Nossa stack é composta por:
+
+*growth-app:* aplicação Elixir/Phoenix instrumentada com Telemetry e OpenTelemetry.
+
+*Logspout:* coleta logs dos containers Docker.
+
+*OpenTelemetry Collector:* recebe, processa e exporta logs, métricas e traces.
+
+*ClickHouse:* banco de dados columnar de alta performance para armazenar todos os dados de observabilidade.
+
+*SigNoz:* interface web para explorar, criar dashboards, alertas e analisar todos os dados.
+
+### Fluxo dos dados:
+
+A aplicação envia logs, métricas e traces para o Otel Collector. O Collector armazena tudo no ClickHouse. O SigNoz consulta o ClickHouse e exibe dashboards e gráficos.
+
+<!-- livebook:{"break_markdown":true} -->
+
+<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+
+```mermaid
+flowchart TD
+    subgraph Docker Host
+        subgraph growth-app [growth-app container]
+            direction LR
+            app([Application])
+        end
+
+        subgraph Observability Stack
+            direction LR
+            logspout[Logspout] -->|http| otel_collector
+            otel_collector(OpenTelemetry Collector)
+            signoz[SigNoz UI]
+            clickhouse[(ClickHouse)]
+        end
+    end
+
+    app -- OTLP --> otel_collector
+    otel_collector -- ClickHouse Exporter --> clickhouse
+    signoz -- queries --> clickhouse
+
+    style growth-app fill:#fff,stroke:#333,stroke-width:2px
+    style Observability Stack fill:#f9f9f9,stroke:#333,stroke-width:2px
+```
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Observabilidade na Aplicação Growth
+
+#### Logs
+
+**Como funciona:**
+
+Utilizamos o Logger nativo do Elixir para registrar eventos importantes da aplicação. Além disso, implementamos a biblioteca `logger_json` para criar logs estruturados, que permite a correlação eficiente de logs com traces e métricas.
+
+`Logger JSON ({:logger_json, "~> 7.0.0"})`
+
+**Por que usar?**
+
+O *Logger JSON* transforma logs não estruturados em formato JSON estruturado, essencial para:
+*Logs Estruturados*: Facilita parsing e análise automatizada
+*Correlação de Dados*: Permite correlacionar logs com traces e métricas
+*Busca Eficiente*: Logs JSON são mais fáceis de indexar e pesquisar
+*Integração com Ferramentas*: Compatível com stacks de observabilidade modernas
+*Metadados Ricos*: Preserva contexto importante como request_id, user_id, etc.
+
+**Como é usado na aplicação?**
+
+Configuração Global (`config/runtime.exs:23`):
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+config :logger, :default_handler, 
+  formatter: LoggerJSON.Formatters.Basic.new(metadata: :all)
+```
+
+**Pipeline de Processamento:**
+
+* Logs da aplicação são automaticamente formatados em JSON
+* Incluem metadados como timestamps, níveis, request_id
+* Capturados pelo Logspout e enviados ao OpenTelemetry Collector
+* O Logspout captura esses logs dos containers e envia para o OTel Collector via syslog
+* O Collector armazena os logs na tabela signoz_logs do ClickHouse
+
+`Fluxo: Application Logs (JSON) → Logspout → OpenTelemetry Collector → ClickHouse → SigNoz`
+
+**Na prática:**
+
+Todos os logs ficam centralizados e podem ser buscados e filtrados na interface do SigNoz. Isso facilita identificar erros, analisar fluxos e auditar o sistema. Os logs estruturados facilitam o troubleshooting e a correlação com os demais dados de telemetria.
+
+#### Métricas
+
+**Como funciona:**
+
+O OpenTelemetry Collector coleta métricas de duas formas:
+
+1. Scrape do endpoint /metrics exposto pela aplicação (formato Prometheus)
+2. Recebimento via OTLP diretamente da aplicação instrumentada
+
+As métricas são armazenadas na tabela signoz_metrics do ClickHouse.
+
+`PromEx ({:prom_ex, "~> 1.11.0"})`
+
+**Por que usar?**
+
+O *PromEx* é uma biblioteca Elixir que facilita a coleta e exposição de métricas no formato Prometheus, proporcionando observabilidade completa da aplicação Phoenix:
+
+* *Monitoramento de Performance*: Coleta automaticamente métricas de latência, throughput e taxa de erro
+* *Visibilidade da Aplicação*: Monitora recursos do sistema como CPU, memória e processos Erlang/Elixir
+* *Detecção Proativa de Problemas*: Permite identificar gargalos e anomalias antes que afetem os usuários
+* *Dashboards Automatizados*: Integra-se com Grafana para visualizações prontas
+
+**Como é usado na aplicação?**
+
+Configuração no Application Tree (`lib/growth/application.ex:15`):
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+children = [
+  Growth.PromEx,  # Iniciado como um dos primeiros processos
+  # ... outros processos
+]
+```
+
+Módulo PromEx Customizado (`lib/growth/prom_ex.ex`):
+
+*Plugins Habilitados*:
+
+* `Plugins.Application`: Métricas da aplicação OTP
+* `Plugins.Beam`: Métricas da VM Erlang (garbage collection, schedulers)
+* `Plugins.Phoenix`: Métricas HTTP (requests, responses, latência)
+* `Plugins.PhoenixLiveView`: Métricas específicas do LiveView
+
+Exposição de Métricas (`lib/growth_web/endpoint.ex:41`):
+
+`plug PromEx.Plug, prom_ex_module: Growth.PromEx`
+
+Expõe endpoint `/metrics` para scraping do Prometheus
+
+Configurado para ser coletado a cada 5 segundos pelo OpenTelemetry Collector
+
+**Na prática:**
+
+Monitoramos contadores, histogramas de duração, uso de recursos, etc. No SigNoz, criamos dashboards para acompanhar saúde, performance e uso do sistema. Podemos configurar alertas para anomalias ou quedas de performance
+
+#### Traces
+
+**Como funciona:**
+
+A aplicação Elixir envia traces via `OTLP` (gRPC ou HTTP) para o `OpenTelemetry Collector`. Cada trace representa o caminho de uma requisição ou operação importante, com spans detalhando cada etapa. Os traces são armazenados na tabela `signoz_traces` do ClickHouse.
+
+*Bibliotecas OpenTelemetry:*
+
+`OpenTelemetry Core ({:opentelemetry, "~> 1.6.0"} e {:opentelemetry_api, "~> 1.4.0"})`
+
+**Por que usar?**
+
+O *OpenTelemetry* é o padrão da indústria para observabilidade, fornecendo:
+
+* Padronização: Protocolo universal para telemetria (logs, métricas, traces)
+* Vendor Agnostic: Não fica preso a uma ferramenta específica de observabilidade
+* Distributed Tracing: Rastreamento de requisições através de múltiplos serviços
+* Correlação Automática: Liga automaticamente logs, métricas e traces
+* Instrumentação Automática: Coleta dados sem modificar código de negócio
+
+`OpenTelemetry Bandit ({:opentelemetry_bandit, "~> 0.3.0"})`
+
+Instrumenta automaticamente o servidor HTTP Bandit (usado pelo Phoenix), coletando:
+
+* Métricas HTTP: Latência, status codes, throughput
+* Traces de Requisições: Rastreamento completo de cada request
+* Contexto de Propagação: Mantém trace context entre serviços
+
+`OpenTelemetry Phoenix ({:opentelemetry_phoenix, "~> 2.0.0"})`
+
+Instrumenta especificamente o framework Phoenix, capturando:
+
+* Controller Actions: Tempo de execução de cada action
+* Pipeline Plugs: Performance de cada plug no pipeline
+* LiveView Events: Instrumentação de eventos do LiveView
+* Template Rendering: Tempo de renderização de templates
+
+`OpenTelemetry Telemetry ({:opentelemetry_telemetry, "~> 1.1.0"})`
+
+Faz a ponte entre o sistema de Telemetry do Elixir e o OpenTelemetry:
+
+* Conversão Automática: Transforma eventos Telemetry em spans OpenTelemetry
+* Instrumentação Nativa: Aproveita a instrumentação já existente no ecossistema Elixir
+* Contexto Distribuído: Propaga trace context através de processos Elixir
+
+`OpenTelemetry Exporter ({:opentelemetry_exporter, "~> 1.9.0"})`
+
+Responsável por enviar os dados coletados para sistemas externos:
+
+* Protocolo OTLP: Envia traces via protocolo OpenTelemetry padrão
+* Batching: Agrupa dados para envio eficiente
+* Retry Logic: Reenvio automático em caso de falhas
+* Compressão: Reduz bandwidth com compressão gzip
+
+**Na prática:**
+
+No `SigNoz`, visualizamos o fluxo completo de requisições, identificando gargalos e dependências. É possível correlacionar traces com logs e métricas para diagnóstico rápido de problemas.
+
+### Fluxo Completo de Observabilidade
+
+**Arquitetura:**
+`Application → OpenTelemetry SDK → OTLP Exporter → OTel Collector → ClickHouse → SigNoz`
+
+**Sinergia das Bibliotecas:**
+
+As bibliotecas trabalham em conjunto para fornecer os três pilares da observabilidade:
+
+*Métricas (PromEx)*: "O que está acontecendo?"
+
+*Logs (Logger JSON)*: "Por que está acontecendo?"
+
+*Traces (OpenTelemetry)*: "Onde está acontecendo?"
+
+**Benefícios da Stack Completa:**
+
+* *Observabilidade 360°*: Métricas + Logs + Traces correlacionados
+* *Troubleshooting Eficiente*: Correlação automática entre os três pilares
+* *Performance Insights*: Identificação precisa de gargalos
+* *Alertas Inteligentes*: Baseados em dados estruturados e correlacionados
+* *Vendor Independence*: Pode migrar entre ferramentas sem reescrever instrumentação
+
+### Conclusão
+
+Com essa arquitetura, temos observabilidade de ponta a ponta: `logs`, `métricas` e `traces`
+centralizados, acessíveis e correlacionados.
+
+Isso nos permite:
+
+* Detectar problemas rapidamente
+* Entender o comportamento do sistema
+* Evoluir com segurança e confiança
+
+O uso de ferramentas open-source como *OpenTelemetry*, *ClickHouse* e *SigNoz* torna a solução acessível, flexível e escalável, proporcionando uma base sólida para manter aplicações resilientes e performáticas em produção.
+
+## SigNoz
+
+### O que é
+
+O SigNoz é uma plataforma open source de observabilidade. Ele junta os três pilares — logs, métricas e traces — em um único lugar, compatível com o padrão OpenTelemetry.
+
+### Como funciona
+
+* Ele coleta dados enviados pela aplicação via OpenTelemetry.
+
+* Esses dados são armazenados e processados (normalmente com ClickHouse por baixo).
+
+* A interface web permite:
+
+  * Criar dashboards de métricas
+
+  * Consultar logs estruturados
+
+  * Explorar traces distribuídos
+
+### Por que usar
+
+*Open source e gratuito* – sem custo por host/volume de dados como nas soluções cloud.
+
+*Controle total* – os dados ficam na sua infra.
+
+*Integração simples* – já entende OpenTelemetry, então funciona com Elixir, Node, Go, etc.
+
+*Comparável a players grandes* – traz a mesma experiência de ferramentas comerciais
+
+```elixir
+
+```
+
+## O que aprendemos
+
+1. **Observabilidade é essencial, não opcional**
+
+Ter logs, métricas e traces centralizados nos permite entender o comportamento real da aplicação em produção.
+
+Problemas que seriam difíceis de diagnosticar (como lentidão, erros intermitentes ou picos de uso) ficam evidentes com poucos cliques no dashboard.
+
+1. **Arquitetura desacoplada facilita evolução**
+
+Separar a coleta (aplicação), processamento (otel-collector) e visualização (SigNoz) permite trocar ou evoluir cada parte sem grandes impactos.
+
+O padrão OpenTelemetry nos dá liberdade para integrar com outras ferramentas no futuro, sem lock-in.
+
+1. **Instrumentação no código é simples e poderosa**
+
+Com Telemetry no Elixir, instrumentar pontos críticos do código é fácil e não polui a lógica de negócio.
+
+Emitir eventos, métricas e traces se torna parte natural do desenvolvimento.
+
+1. **Visualização e análise aceleram o ciclo de feedback**
+
+Dashboards e alertas no SigNoz permitem agir rapidamente diante de anomalias.
+
+Conseguimos identificar gargalos, monitorar uso de recursos e entender o fluxo das requisições em tempo real.
+
+1. **Logs, métricas e traces se complementam**
+
+Logs mostram o detalhe do que aconteceu.
+
+Métricas mostram tendências e alertam para mudanças de comportamento.
+
+Traces mostram o caminho completo de cada requisição, facilitando encontrar a causa raiz de problemas.
+
+1. **Observabilidade é para todos**
+
+A stack é open-source, acessível e pode ser usada tanto em ambientes locais quanto em produção.
+
+Não é preciso depender de soluções proprietárias caras para ter visibilidade de ponta a ponta.
+
+1. **Cultura de melhoria contínua**
+
+Com dados em mãos, a equipe pode tomar decisões baseadas em fatos, priorizar melhorias e evoluir o sistema com confiança.
+
+Observabilidade não é só tecnologia, mas parte da cultura de desenvolvimento moderno.
+
+## Observando a Growth
+
+```elixir
+public_url = "https://crescer.dubas.dev"
+internal_url = "http://172.25.0.2:4000"
+node_name = "growth@172.25.0.2"
+
+IO.puts("""
+🌐 CONECTANDO À APLICAÇÃO EM PRODUÇÃO:
+
+✅ URL Pública: #{public_url}
+🐳 Container: #{node_name}
+🔗 URL Interna: #{internal_url}
+🚀 Ambiente: Produção (Docker)
+📊 Dados: Reais de usuários reais!
+
+Vamos conectar e observar a telemetria ao vivo!
+""")
+
+```
+
+```elixir
+IO.puts("🌐 Testando acesso público...")
+case Req.get(public_url) do
+  {:ok, %{status: 200}} ->
+    IO.puts("✅ Aplicação pública acessível!")
+  {:ok, %{status: status}} ->
+    IO.puts("⚠️ Aplicação respondeu com status #{status}")
+  {:error, reason} ->
+    IO.puts("❌ Erro de conexão pública: #{inspect(reason)}")
+end
+```
+
+```elixir
+IO.puts("\n🐳 Testando acesso interno ao container...")
+case Req.get(internal_url, receive_timeout: 5000) do
+  {:ok, %{status: 200}} ->
+    IO.puts("✅ Container acessível diretamente!")
+  {:ok, %{status: status}} ->
+    IO.puts("⚠️ Container respondeu com status #{status}")
+  {:error, reason} ->
+    IO.puts("ℹ️ Acesso interno não disponível (normal): #{inspect(reason)}")
+    IO.puts("💡 Usando URL pública para demonstração")
+end
+```
+
+```elixir
+defmodule NodeConnection do
+  def try_connect_to_node do
+    node_name = :"growth@172.25.0.2"
+
+    IO.puts("🔗 TENTANDO CONECTAR AO NODE ERLANG:")
+    IO.puts("   Node: #{node_name}")
+    IO.puts("   Node local: #{Node.self()}")
+
+    # Verificar se o node está acessível
+    case Node.ping(node_name) do
+      :pong ->
+        IO.puts("✅ Node conectado com sucesso!")
+
+        # Obter informações do sistema remoto
+        remote_info = :rpc.call(node_name, :erlang, :system_info, [:system_version])
+        IO.puts("📊 Versão do sistema: #{remote_info}")
+
+        # Obter estatísticas de memória
+        memory_info = :rpc.call(node_name, :erlang, :memory, [])
+        IO.puts("🧠 Uso de memória:")
+        Enum.each(memory_info, fn {type, bytes} ->
+          mb = Float.round(bytes / (1024 * 1024), 2)
+          IO.puts("   #{type}: #{mb}MB")
+        end)
+
+        # Obter número de processos
+        process_count = :rpc.call(node_name, :erlang, :system_info, [:process_count])
+        IO.puts("⚙️ Processos ativos: #{process_count}")
+
+        {:ok, :connected}
+
+      :pang ->
+        IO.puts("ℹ️ Node não acessível diretamente (normal em produção)")
+        IO.puts("💡 Isso é esperado por questões de segurança")
+        IO.puts("🔄 Continuando com métricas HTTP...")
+        {:error, :not_accessible}
+    end
+  end
+
+  def get_vm_metrics_simulation do
+    IO.puts("📊 SIMULAÇÃO DE MÉTRICAS DA VM ERLANG:")
+    IO.puts("=" |> String.duplicate(50))
+    IO.puts("🐳 Node: growth@172.25.0.2")
+    IO.puts("⏰ Timestamp: #{DateTime.utc_now()}")
+    IO.puts("")
+
+    # Simular métricas que estariam disponíveis
+    simulated_metrics = [
+      {"Memória Total", "45.6MB"},
+      {"Processos", "156"},
+      {"Schedulers", "8"},
+      {"Uptime", "2d 14h 32m"},
+      {"GC Count", "1,234"},
+      {"Reductions", "12,345,678"}
+    ]
+
+    Enum.each(simulated_metrics, fn {metric, value} ->
+      IO.puts("📈 #{metric}: #{value}")
+    end)
+
+    IO.puts("\n💡 Em um ambiente com acesso direto ao node, poderíamos obter:")
+    IO.puts("   - Estatísticas detalhadas de memória")
+    IO.puts("   - Informações de processos em tempo real")
+    IO.puts("   - Métricas de garbage collection")
+    IO.puts("   - Estado dos schedulers")
+    IO.puts("   - Traces distribuídos internos")
+  end
+end
+
+# Tentar conectar (provavelmente falhará por segurança)
+NodeConnection.try_connect_to_node()
+
+# Mostrar simulação das métricas que teríamos
+IO.puts("")
+NodeConnection.get_vm_metrics_simulation()
+```
+
+```elixir
+defmodule LiveMetrics do
+  def fetch_metrics(base_url \\ "https://crescer.dubas.dev") do
+    metrics_url = "#{base_url}/metrics"
+
+    case Req.get(metrics_url) do
+      {:ok, %{status: 200, body: body}} ->
+        {:ok, body}
+      {:ok, %{status: status}} ->
+        {:error, "HTTP #{status} - Métricas podem não estar expostas publicamente"}
+      {:error, reason} ->
+        {:error, "Conexão falhou: #{inspect(reason)}"}
+    end
+  end
+
+  def parse_metrics(metrics_text) do
+    metrics_text
+    |> String.split("\n")
+    |> Enum.reject(&String.starts_with?(&1, "#"))
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.take(20)  # Primeiras 20 métricas para não sobrecarregar
+  end
+
+  def display_metrics(metrics_lines) do
+    IO.puts("📊 MÉTRICAS REAIS DA APLICAÇÃO GROWTH (PRODUÇÃO)")
+    IO.puts("=" |> String.duplicate(60))
+    IO.puts("🔗 Fonte: https://crescer.dubas.dev/metrics")
+    IO.puts("⏰ Timestamp: #{DateTime.utc_now()}")
+    IO.puts("")
+
+    Enum.with_index(metrics_lines, 1)
+    |> Enum.each(fn {line, index} ->
+      IO.puts("#{index}. #{line}")
+    end)
+  end
+end
+
+# Buscar métricas reais
+case LiveMetrics.fetch_metrics() do
+  {:ok, metrics_text} ->
+    metrics_text
+    |> LiveMetrics.parse_metrics()
+    |> LiveMetrics.display_metrics()
+
+  {:error, reason} ->
+    IO.puts("❌ ERRO: #{reason}")
+    IO.puts("💡 Certifique-se de que a aplicação está rodando em http://localhost:4000")
+    IO.puts("   Execute: mix phx.server")
+end
+```
+
+```elixir
+defmodule TrafficGenerator do
+  def make_requests(count \\ 5) do
+    IO.puts("🚀 GERANDO #{count} REQUISIÇÕES...")
+
+    results =
+      1..count
+      |> Enum.map(fn i ->
+        IO.puts("📡 Requisição #{i}/#{count}")
+
+        start_time = System.monotonic_time(:millisecond)
+
+        result = case Req.get("https://crescer.dubas.dev/") do
+          {:ok, %{status: status}} ->
+            duration = System.monotonic_time(:millisecond) - start_time
+            %{status: status, duration: duration, success: true}
+          {:error, reason} ->
+            duration = System.monotonic_time(:millisecond) - start_time
+            %{error: reason, duration: duration, success: false}
+        end
+
+        Process.sleep(500)  # Pausa entre requisições
+        result
+      end)
+
+    # Mostrar resultados
+    IO.puts("\n📈 RESULTADOS:")
+    Enum.with_index(results, 1)
+    |> Enum.each(fn {result, i} ->
+      if result.success do
+        IO.puts("✅ #{i}. HTTP #{result.status} - #{result.duration}ms")
+      else
+        IO.puts("❌ #{i}. ERRO: #{result.error} - #{result.duration}ms")
+      end
+    end)
+
+    # Estatísticas
+    successful = Enum.count(results, & &1.success)
+    total_duration = Enum.sum(Enum.map(results, & &1.duration))
+    avg_duration = if count > 0, do: total_duration / count, else: 0
+
+    IO.puts("\n📊 ESTATÍSTICAS:")
+    IO.puts("✅ Sucessos: #{successful}/#{count}")
+    IO.puts("⏱️  Duração média: #{Float.round(avg_duration, 2)}ms")
+    IO.puts("📈 Taxa de sucesso: #{Float.round(successful/count*100, 1)}%")
+
+    results
+  end
+end
+
+# Gerar tráfego
+TrafficGenerator.make_requests(3)
+```
+
+```elixir
+# Capturar métricas antes
+IO.puts("📊 CAPTURANDO MÉTRICAS ANTES...")
+{:ok, metrics_before} = LiveMetrics.fetch_metrics()
+
+# Gerar mais tráfego
+IO.puts("\n🚀 GERANDO TRÁFEGO...")
+TrafficGenerator.make_requests(5)
+
+# Aguardar um pouco para as métricas serem atualizadas
+Process.sleep(2000)
+
+# Capturar métricas depois
+IO.puts("\n📊 CAPTURANDO MÉTRICAS DEPOIS...")
+{:ok, metrics_after} = LiveMetrics.fetch_metrics()
+```
+
+```elixir
+defmodule MetricsComparison do
+  def extract_metric_value(metrics_text, metric_name) do
+    metrics_text
+    |> String.split("\n")
+    |> Enum.find(&String.starts_with?(&1, metric_name))
+    |> case do
+      nil -> 0
+      line ->
+        line
+        |> String.split(" ")
+        |> List.last()
+        |> String.to_float()
+    end
+  end
+
+  def compare_metrics(before, following) do
+    metrics_to_compare = [
+      "phoenix_http_requests_total",
+      "phoenix_endpoint_stop_duration_seconds_count",
+      "vm_memory_bytes_total"
+    ]
+
+    IO.puts("🔍 COMPARAÇÃO DE MÉTRICAS:")
+    IO.puts("=" |> String.duplicate(50))
+
+    Enum.each(metrics_to_compare, fn metric ->
+      before_val = extract_metric_value(before, metric)
+      after_val = extract_metric_value(following, metric)
+      diff = after_val - before_val
+
+      IO.puts("📈 #{metric}:")
+      IO.puts("   Antes: #{before_val}")
+      IO.puts("   Depois: #{after_val}")
+      IO.puts("   Diferença: +#{diff}")
+      IO.puts("")
+    end)
+  end
+end
+
+MetricsComparison.compare_metrics(metrics_before, metrics_after)
+```
+
+```elixir
+defmodule GrowthAppSimulator do
+  def simulate_child_growth_calculation do
+    IO.puts("👶 SIMULANDO CÁLCULO DE CRESCIMENTO...")
+
+    # Dados de exemplo de uma criança
+    child_data = %{
+      name: "Ana",
+      gender: "female",
+      birthday: "2021-01-01"
+    }
+
+    measure_data = %{
+      weight: 14.5,
+      height: 95.0,
+      head_circumference: 48.0
+    }
+
+    IO.puts("📋 Dados da criança:")
+    IO.puts("   Nome: #{child_data.name}")
+    IO.puts("   Gênero: #{child_data.gender}")
+    IO.puts("   Nascimento: #{child_data.birthday}")
+
+    IO.puts("\n📏 Medidas:")
+    IO.puts("   Peso: #{measure_data.weight}kg")
+    IO.puts("   Altura: #{measure_data.height}cm")
+    IO.puts("   Perímetro cefálico: #{measure_data.head_circumference}cm")
+
+    # Fazer requisição para a página principal
+    IO.puts("\n🌐 Acessando aplicação em produção...")
+
+    case Req.get("https://crescer.dubas.dev/") do
+      {:ok, %{status: 200}} ->
+        IO.puts("✅ Aplicação acessada com sucesso!")
+        IO.puts("💡 Em uma aplicação real, aqui faríamos:")
+        IO.puts("   1. POST para salvar dados da criança")
+        IO.puts("   2. POST para salvar medidas")
+        IO.puts("   3. Cálculo dos z-scores e percentis")
+        IO.puts("   4. Geração dos gráficos de crescimento")
+
+        # Simular múltiplas requisições para gerar telemetria
+        IO.puts("\n🔄 Simulando fluxo completo...")
+
+        Enum.each(1..3, fn step ->
+          IO.puts("   Passo #{step}: Processando...")
+          Req.get("http://localhost:4000/")
+          Process.sleep(1000)
+        end)
+
+        IO.puts("✅ Simulação concluída!")
+
+      {:error, reason} ->
+        IO.puts("❌ Erro ao acessar aplicação: #{inspect(reason)}")
+    end
+  end
+end
+
+GrowthAppSimulator.simulate_child_growth_calculation()
+```
+
+```elixir
+defmodule LiveLogs do
+  def simulate_real_logs do
+    IO.puts("📋 LOGS QUE ESTARIAM SENDO GERADOS AGORA:")
+    IO.puts("=" |> String.duplicate(60))
+
+    logs = [
+      %{
+        timestamp: DateTime.utc_now(),
+        level: "info",
+        message: "GET / - Sent 200",
+        metadata: %{
+          duration: "45.2ms",
+          request_id: "F8mOKAmVmjsAABEh"
+        }
+      },
+      %{
+        timestamp: DateTime.utc_now() |> DateTime.add(-2, :second),
+        level: "info",
+        message: "LiveView connected",
+        metadata: %{
+          socket_id: "phx-F8mOKAmVmjsAABEh",
+          transport: "websocket"
+        }
+      },
+      %{
+        timestamp: DateTime.utc_now() |> DateTime.add(-5, :second),
+        level: "info",
+        message: "CSV data loaded: weight_for_age.csv",
+        metadata: %{
+          records: 1856,
+          duration: "580ms"
+        }
+      }
+    ]
+
+    Enum.each(logs, fn log ->
+      level_icon = case log.level do
+        "info" -> "ℹ️"
+        "error" -> "🚨"
+        "warn" -> "⚠️"
+      end
+
+      IO.puts("#{level_icon} [#{DateTime.to_time(log.timestamp)}] #{log.message}")
+
+      if log.metadata do
+        Enum.each(log.metadata, fn {key, value} ->
+          IO.puts("    #{key}: #{value}")
+        end)
+      end
+
+      IO.puts("")
+    end)
+
+    IO.puts("💡 Para ver logs reais, execute no terminal:")
+    IO.puts("   tail -f _build/dev/lib/growth/ebin/growth.log")
+    IO.puts("   ou observe o terminal onde mix phx.server está rodando")
+  end
+end
+
+LiveLogs.simulate_real_logs()
+```
+
+```elixir
+defmodule LiveDashboard do
+  def create_live_dashboard do
+    IO.puts("📊 DASHBOARD AO VIVO - APLICAÇÃO GROWTH")
+    IO.puts("=" |> String.duplicate(50))
+    IO.puts("🕐 Atualizado em: #{DateTime.utc_now()}")
+    IO.puts("")
+
+    # Buscar métricas atuais
+    case LiveMetrics.fetch_metrics() do
+      {:ok, metrics} ->
+        # Extrair métricas específicas
+        http_requests = extract_counter(metrics, "phoenix_http_requests_total")
+        memory_usage = extract_gauge(metrics, "vm_memory_bytes_total")
+
+        IO.puts("🌐 HTTP:")
+        IO.puts("   📈 Total de requisições: #{http_requests}")
+
+        IO.puts("\n💻 SISTEMA:")
+        memory_mb = if memory_usage > 0, do: Float.round(memory_usage / (1024*1024), 1), else: 0
+        IO.puts("   🧠 Uso de memória: #{memory_mb}MB")
+
+        IO.puts("\n🏥 STATUS:")
+        status = if http_requests > 0, do: "🟢 ATIVO", else: "🟡 AGUARDANDO TRÁFEGO"
+        IO.puts("   #{status}")
+
+      {:error, reason} ->
+        IO.puts("❌ Não foi possível buscar métricas: #{reason}")
+        IO.puts("💡 Certifique-se de que a aplicação está rodando")
+    end
+  end
+
+  defp extract_counter(metrics, name) do
+    metrics
+    |> String.split("\n")
+    |> Enum.filter(&String.contains?(&1, name))
+    |> Enum.reject(&String.starts_with?(&1, "#"))
+    |> Enum.map(fn line ->
+      line
+      |> String.split(" ")
+      |> List.last()
+      |> parse_number()
+    end)
+    |> Enum.sum()
+    |> trunc()
+  end
+
+  defp extract_gauge(metrics, name) do
+    metrics
+    |> String.split("\n")
+    |> Enum.find(&String.starts_with?(&1, name))
+    |> case do
+      nil -> 0
+      line ->
+        line
+        |> String.split(" ")
+        |> List.last()
+        |> parse_number()
+    end
+  end
+
+  defp parse_number(str) do
+    cond do
+      String.contains?(str, ".") ->
+        # É um float
+        case Float.parse(str) do
+          {num, _} -> num
+          :error -> 0
+        end
+      true ->
+        # É um inteiro
+        case Integer.parse(str) do
+          {num, _} -> num
+          :error -> 0
+        end
+    end
+  end
+end
+
+LiveDashboard.create_live_dashboard()
+```
+
+```elixir
+IO.puts("📊 DASHBOARD INICIAL:")
+LiveDashboard.create_live_dashboard()
+
+IO.puts("\n💡 DICAS PARA DEMONSTRAÇÃO:")
+IO.puts("1. 🌐 Acesse https://crescer.dubas.dev em outra aba")
+IO.puts("2. 👶 Preencha dados de uma criança")
+IO.puts("3. 📏 Adicione medidas e calcule crescimento")
+IO.puts("4. 🔄 Execute a célula abaixo para atualizar dashboard")
+IO.puts("5. 📊 Observe as métricas mudando em tempo real!")
+```
+
+```elixir
+IO.puts("🔄 ATUALIZANDO DASHBOARD...")
+IO.puts("⏰ #{DateTime.utc_now()}")
+IO.puts("")
+
+LiveDashboard.create_live_dashboard()
+
+IO.puts("\n🎯 Execute esta célula quantas vezes quiser para ver mudanças!")
+IO.puts("💡 Gere tráfego na aplicação e execute novamente para ver diferenças")
+```
+
+<!-- livebook:{"offset":41683,"stamp":{"token":"XCP.zxaWnWOpyRz79vYci-GFtCU5Lz8ZvejC9DMxvxgmTqaNEv5JPBoBj4TGeX2xsagKMRvYNXOFSrNnmI-rtaiA6PYEweDByQP3pG8wo52xixJnCPcNrkgZjhpV6a-uPxOc1nhzUYFlwUwDLWo8b7F7fbMytwo52hSxoe8woVEA","version":2}} -->
