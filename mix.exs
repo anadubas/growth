@@ -60,7 +60,7 @@ defmodule Growth.MixProject do
       {:opentelemetry_phoenix, "~> 2.0.0"},
       {:opentelemetry_telemetry, "~> 1.1.0"},
       {:phoenix, "~> 1.8.1"},
-      {:phoenix_html, "~> 4.2.0"},
+      {:phoenix_html, "~> 4.3.0"},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:phoenix_live_reload, "~> 1.6.0", only: :dev},
       {:phoenix_live_view, "~> 1.1.0", override: true},
