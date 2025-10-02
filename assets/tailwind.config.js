@@ -11,9 +11,6 @@ module.exports = {
     "../lib/growth_web.ex",
     "../lib/growth_web/**/*.*ex"
   ],
-  daisyui: {
-    themes: ["valentine", "synthwave"],
-  },
   plugins: [
     // Allows prefixing tailwind classes with LiveView classes to add rules
     // only when LiveView classes are applied, for example:
@@ -65,5 +62,5 @@ module.exports = {
         }
       }, { values })
     })
-  ]
+  ],
 }
