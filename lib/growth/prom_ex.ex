@@ -63,7 +63,10 @@ defmodule Growth.PromEx do
       Plugins.Application,
       Plugins.Beam,
       {Plugins.Phoenix, router: GrowthWeb.Router, endpoint: GrowthWeb.Endpoint},
-      Plugins.PhoenixLiveView
+      Plugins.PhoenixLiveView,
+
+      # Add our custom Growth metrics plugin
+      Growth.PromExPlugin
 
       # Add your own PromEx metrics plugins
       # Growth.Users.PromExPlugin
