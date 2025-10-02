@@ -1,4 +1,7 @@
 @import "tailwindcss";
-@plugin "daisyui";
+@config "../tailwind.config.js";
+@plugin "daisyui" {
+  themes: valentine --default, synthwave;
+};
 
 /* This file is for your main application CSS */
