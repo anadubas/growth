@@ -32,48 +32,44 @@ defmodule GrowthWeb.ChildFormComponent do
 
   def render(assigns) do
     ~H"""
-    <div class="card max-w-lg mx-auto bg-base-300 shadow-md rounded-lg p-6">
-      <form phx-submit="save_child">
-        <label class="form-control w-full">
-          <div class="label">
-            <span class="label-text">Nome</span>
-          </div>
+    <form class="card" phx-submit="save_child">
+      <fieldset class="fieldset card-body w-full max-w-lg mx-auto bg-base-300 shadow-md rounded-lg p-6">
+        <legend class="fieldset-legend card-title">A criança:</legend>
+
+        <label class="input input-primary w-full">
+          <span class="label w-1/3">Nome</span>
           <input
             type="text"
             name="child[name]"
-            class="input input-bordered input-primary w-full"
+            class="w-full"
             placeholder="Nome"
             required
           />
         </label>
 
-        <label class="form-control w-full">
-          <div class="label">
-            <span class="label-text">Data de nascimento</span>
-          </div>
+        <label class="input input-primary w-full">
+          <span class="label w-1/3">Nascimento</span>
           <input
             type="date"
             name="child[birthday]"
-            class="input input-bordered input-primary w-full"
+            class="w-full"
             required
           />
         </label>
 
-        <label class="form-control w-full">
-          <div class="label">
-            <span class="label-text">Sexo</span>
-          </div>
-          <select name="child[gender]" class="select select-bordered select-primary w-full" required>
+        <label class="select select-primary w-full">
+          <span class="label w-1/3">Sexo</span>
+          <select name="child[gender]" class="w-full" required>
             <option value="female">Menina</option>
             <option value="male">Menino</option>
           </select>
         </label>
 
-        <div class="text-center mt-4">
+        <div class="card-actions justify-center">
           <button type="submit" class="btn btn-primary">Próximo</button>
         </div>
-      </form>
-    </div>
+      </fieldset>
+    </form>
     """
   end
 end
