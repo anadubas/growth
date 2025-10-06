@@ -38,55 +38,51 @@ defmodule GrowthWeb.MeasureFormComponent do
 
   def render(assigns) do
     ~H"""
-    <div class="card max-w-lg mx-auto bg-base-300 shadow-md rounded-lg p-6">
-      <form phx-submit="save_measure">
-        <label class="form-control w-full">
-          <div class="label">
-            <span class="label-text">Altura (cm)</span>
-          </div>
+    <form class="card" phx-submit="save_measure">
+      <fieldset class="fieldset card-body w-full max-w-lg mx-auto bg-base-300 shadow-md rounded-lg p-6">
+        <legend class="fieldset-legend card-title">Medidas:</legend>
+
+        <label class="input input-primary w-full">
+          <span class="label w-1/3">Altura (cm)</span>
           <input
             type="number"
             step="0.01"
             name="measure[height]"
-            class="input input-bordered input-primary"
+            class="w-full"
             placeholder="Altura"
             required
           />
         </label>
 
-        <label class="form-control w-full">
-          <div class="label">
-            <span class="label-text">Peso (kg)</span>
-          </div>
+        <label class="input input-primary w-full">
+          <span class="label w-1/3">Peso (kg)</span>
           <input
             type="number"
             step="0.001"
             name="measure[weight]"
-            class="input input-bordered input-primary"
+            class="w-full"
             placeholder="Peso"
             required
           />
         </label>
 
-        <label class="form-control w-full">
-          <div class="label">
-            <span class="label-text">Circunferência da Cabeça (cm)</span>
-          </div>
+        <label class="input input-primary w-full">
+          <span class="label w-1/3"><abbr title="Circunferência">C.</abbr> Cabeça (cm)</span>
           <input
             type="number"
             step="0.01"
             name="measure[head_circumference]"
-            class="input input-bordered input-primary"
+            class="w-full"
             placeholder="Circunferência da Cabeça"
             required
           />
         </label>
 
-        <div class="text-center mt-4">
+        <div class="card-actions justify-center">
           <button type="submit" class="btn btn-primary">Calcular</button>
         </div>
-      </form>
-    </div>
+      </fieldset>
+    </form>
     """
   end
 end
