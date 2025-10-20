@@ -1,6 +1,6 @@
-ARG ELIXIR_VERSION=1.18.4
+ARG ELIXIR_VERSION=1.19.0
 ARG OTP_VERSION=28.1
-ARG DEBIAN_VERSION=trixie-20250908-slim
+ARG DEBIAN_VERSION=trixie-20250929-slim
 ARG NODE_VERSION=24.10.0-trixie-slim
 ARG ASSETS_IMAGE="node:${NODE_VERSION}"
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
@@ -19,7 +19,7 @@ RUN apt-get update -y \
   && apt-get clean \
   && rm -f /var/lib/apt/lists/*_*
 WORKDIR /app
-RUN mix do local.hex --force, local.rebar --force
+RUN mix do local.hex --force + local.rebar --force
 ARG MIX_ENV="prod"
 ENV MIX_ENV=${MIX_ENV}
 COPY mix.exs mix.lock ./

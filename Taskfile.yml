@@ -33,8 +33,8 @@ tasks:
   clean:
     desc: "Clean build and deps"
     cmds:
-      - mix do deps.clean --all, clean
-      - MIX_ENV=test mix do deps.clean --all, clean
+      - mix do deps.clean --all + clean
+      - MIX_ENV=test mix do deps.clean --all + clean
       - rm -rf assets/node_modules
 
   check:format:
@@ -60,7 +60,7 @@ tasks:
   deps:application:
     desc: "Install elixir dependencies"
     cmds:
-      - mix do deps.get, deps.compile
+      - mix do deps.get + deps.compile
 
   deps:assets:
     desc: "Install node dependencies"
@@ -91,7 +91,7 @@ tasks:
   bootstrap:
     desc: "Add rebar and hex"
     cmds:
-      - mix do local.hex --force, local.rebar --force
+      - mix do local.hex --force + local.rebar --force
 
   test:
     desc: "Run all tests"
