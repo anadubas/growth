@@ -1,6 +1,6 @@
 [tools]
 erlang = "28.1.1"
-elixir = "1.19.1-otp-28"
-lefthook = "2.0.2"
-node = "24.11.0"
+elixir = "1.19.2-otp-28"
+lefthook = "2.0.3"
+node = "25.1.0"
 task = "3.45.4"
