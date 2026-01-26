@@ -38,3 +38,7 @@ npm-debug.log
 # Dialyzer plt files
 /priv/plts/*.plt
 /priv/plts/*.plt.hash
+
+# LSP folders
+/.elixir_ls/
+/.expert/
