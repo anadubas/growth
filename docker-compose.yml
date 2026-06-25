@@ -30,7 +30,7 @@ services:
       "growth.path": /metrics
 
   live:
-    image: "ghcr.io/livebook-dev/livebook:0.17.2"
+    image: "ghcr.io/livebook-dev/livebook:0.19.8"
     init: true
     hostname: live
     restart: unless-stopped
