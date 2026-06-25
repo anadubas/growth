@@ -21,14 +21,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup erlang/elixir/taskfile runtimes
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@v4
       - name: Prepare system
         run: task bootstrap
       - name: Cache dependencies and compiled build
         id: cache-deps
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         env:
           CACHE_NAME: cache-elixir-deps-and-build
         with:
@@ -54,14 +54,14 @@ jobs:
       - deps
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup erlang/elixir/taskfile runtimes
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@v4
       - name: Prepare system
         run: task bootstrap
       - name: Restore deps/compiled build from cache
         id: cache-deps
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         env:
           CACHE_NAME: cache-elixir-deps-and-build
         with:
@@ -80,14 +80,14 @@ jobs:
     needs: deps
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup erlang/elixir/taskfile runtimes
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@v4
       - name: Prepare system
         run: task bootstrap
       - name: Restore deps/compiled build from cache
         id: cache-deps
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         env:
           CACHE_NAME: cache-elixir-deps-and-build
         with:
@@ -106,14 +106,14 @@ jobs:
     needs: deps
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup erlang/elixir/taskfile runtimes
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@v4
       - name: Prepare system
         run: task bootstrap
       - name: Restore deps/compiled build from cache
         id: cache-deps
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         env:
           CACHE_NAME: cache-elixir-deps-and-build
         with:
@@ -125,7 +125,7 @@ jobs:
             ${{ runner.os }}-mix-${{ env.CACHE_NAME }}-
       - name: Restore PLT resource from cache
         id: cache-plt-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         env:
           CACHE_NAME: cache-plt
         with:
@@ -142,7 +142,7 @@ jobs:
         run: task create_plt
       - name: Save PLT resource into cache
         id: cache-plt-save
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         env:
           CACHE_NAME: cache-plt
         with:
