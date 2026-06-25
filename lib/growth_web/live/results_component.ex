@@ -71,8 +71,7 @@ defmodule GrowthWeb.ResultsComponent do
             class="w-full h-96"
             phx-hook="GrowthChart"
             data-chart={Jason.encode!(@charts.height)}
-          >
-          </canvas>
+          ></canvas>
         </div>
 
         <div class="w-full text-center mb-4">
@@ -82,8 +81,7 @@ defmodule GrowthWeb.ResultsComponent do
             class="w-full h-96"
             phx-hook="GrowthChart"
             data-chart={Jason.encode!(@charts.weight)}
-          >
-          </canvas>
+          ></canvas>
         </div>
 
         <div class="w-full text-center mb-4">
@@ -93,8 +91,7 @@ defmodule GrowthWeb.ResultsComponent do
             class="w-full h-96"
             phx-hook="GrowthChart"
             data-chart={Jason.encode!(@charts.bmi)}
-          >
-          </canvas>
+          ></canvas>
         </div>
 
         <div class="w-full text-center mb-4">
@@ -104,8 +101,7 @@ defmodule GrowthWeb.ResultsComponent do
             class="w-full h-96"
             phx-hook="GrowthChart"
             data-chart={Jason.encode!(@charts.head_circ)}
-          >
-          </canvas>
+          ></canvas>
         </div>
       </div>
     </div>

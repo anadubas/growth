@@ -16,7 +16,6 @@ defmodule Growth.Calculate do
   alias Growth.Measure
   alias Growth.Percentile
   alias Growth.Zscore
-  require :telemetry
 
   @days_in_month 30.4375
 

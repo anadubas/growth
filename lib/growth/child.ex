@@ -26,7 +26,6 @@ defmodule Growth.Child do
   """
 
   alias Growth.Calculate
-  require :telemetry
 
   @type t :: %__MODULE__{
           name: String.t() | nil,

@@ -32,7 +32,6 @@ defmodule Growth.Measure do
 
   alias Growth.Calculate
   alias Growth.Child
-  require :telemetry
 
   @type t :: %__MODULE__{
           height: number() | nil,

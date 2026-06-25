@@ -13,7 +13,6 @@ defmodule Growth.LoadReference do
   - `:bmi` — BMI-for-age reference
   - `:head_circumference` — Head circumference-for-age reference
   """
-  require :telemetry
 
   @doc """
   Loads a reference data row from the ETS table for a given measurement type and child.

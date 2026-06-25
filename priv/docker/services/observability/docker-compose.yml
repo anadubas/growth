@@ -1,7 +1,7 @@
 ---
 services:
   clickhouse_init:
-    image: &clickhouse_image "clickhouse/clickhouse-server:25.8.2.29-alpine"
+    image: &clickhouse_image "clickhouse/clickhouse-server:26.4.1.1141-alpine"
     hostname: clickhouse_init
     restart: on-failure
     profiles:
@@ -89,7 +89,7 @@ services:
       retries: 5
 
   signoz_migration_sync:
-    image: &signoz_migrator_image "signoz/signoz-schema-migrator:v0.129.5"
+    image: &signoz_migrator_image "signoz/signoz-schema-migrator:v0.144.5"
     hostname: signoz_migration_sync
     restart: on-failure
     profiles:
@@ -127,7 +127,7 @@ services:
       - --up=
 
   signoz:
-    image: "signoz/signoz:v0.95.1"
+    image: "signoz/signoz:v0.130.1"
     hostname: signoz
     restart: unless-stopped
     profiles:
@@ -161,7 +161,7 @@ services:
       retries: 5
 
   otel-collector:
-    image: "signoz/signoz-otel-collector:v0.129.5"
+    image: "signoz/signoz-otel-collector:v0.144.5"
     hostname: otel-collector
     restart: unless-stopped
     profiles:
