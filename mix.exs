@@ -5,7 +5,7 @@ defmodule Growth.MixProject do
     [
       app: :growth,
       version: "0.1.0",
-      elixir: "~> 1.19.0",
+      elixir: "~> 1.20.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -35,12 +35,12 @@ defmodule Growth.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:bandit, "~> 1.10.0"},
+      {:bandit, "~> 1.12.0"},
       {:credo, "~> 1.7.10"},
       {:dns_cluster, "~> 0.2.0"},
       {:dialyxir, "~> 1.4.5", only: [:test, :dev], runtime: false},
       {:esbuild, "~> 0.10.0", runtime: Mix.env() == :dev},
-      {:finch, "~> 0.21.0"},
+      {:finch, "~> 0.23.0"},
       {:floki, "~> 0.38.0", only: :test},
       {:gettext, "~> 1.0.0"},
       {:heroicons,
@@ -59,14 +59,14 @@ defmodule Growth.MixProject do
       {:opentelemetry_exporter, "~> 1.10.0"},
       {:opentelemetry_phoenix, "~> 2.0.0"},
       {:opentelemetry_telemetry, "~> 1.1.0"},
-      {:phoenix, "~> 1.8.1"},
+      {:phoenix, "~> 1.8.0"},
       {:phoenix_html, "~> 4.3.0"},
-      {:phoenix_live_dashboard, "~> 0.8.3"},
+      {:phoenix_live_dashboard, "~> 0.8.0"},
       {:phoenix_live_reload, "~> 1.6.0", only: :dev},
-      {:phoenix_live_view, "~> 1.1.0", override: true},
-      {:prom_ex, "~> 1.11.0"},
-      {:swoosh, "~> 1.21.0"},
-      {:tailwind, "~> 0.4.0", runtime: Mix.env() == :dev},
+      {:phoenix_live_view, "~> 1.2.0", override: true},
+      {:prom_ex, "~> 1.12.0"},
+      {:swoosh, "~> 1.26.0"},
+      {:tailwind, "~> 0.5.0", runtime: Mix.env() == :dev},
       {:telemetry_metrics, "~> 1.1.0"},
       {:telemetry_poller, "~> 1.3.0"}
     ]
