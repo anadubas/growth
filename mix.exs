@@ -68,7 +68,8 @@ defmodule Growth.MixProject do
       {:swoosh, "~> 1.26.0"},
       {:tailwind, "~> 0.5.0", runtime: Mix.env() == :dev},
       {:telemetry_metrics, "~> 1.1.0"},
-      {:telemetry_poller, "~> 1.3.0"}
+      {:telemetry_poller, "~> 1.3.0"},
+      {:zoi, "~> 0.18.0"}
     ]
   end
 
