@@ -33,70 +33,60 @@ defmodule Growth.Measure do
   alias Growth.Calculate
   alias Growth.Child
 
-  @type t :: %__MODULE__{
-          height: number() | nil,
-          weight: number() | nil,
-          head_circumference: number() | nil,
-          bmi: number() | String.t() | nil,
-          child: Child.t() | nil,
-          results: map()
-        }
+  @schema Zoi.struct(
+            __MODULE__,
+            %{
+              height: Zoi.number() |> Zoi.min(0) |> Zoi.nullish(),
+              weight: Zoi.number() |> Zoi.min(0) |> Zoi.nullish(),
+              head_circumference: Zoi.number() |> Zoi.min(0) |> Zoi.nullish(),
+              bmi: Zoi.number() |> Zoi.min(0) |> Zoi.nullish(),
+              child: Zoi.struct(Child) |> Zoi.required(),
+              results: Zoi.map() |> Zoi.default(%{}) |> Zoi.optional()
+            },
+            coerce: true
+          )
 
-  defstruct [
-    :weight,
-    :height,
-    :head_circumference,
-    :bmi,
-    :child,
-    results: %{}
-  ]
+  @type t :: unquote(Zoi.type_spec(@schema))
+
+  defstruct Zoi.Struct.struct_fields(@schema)
 
   @doc """
   Create a measure result for a child
   """
-  @spec new(map(), Child.t()) :: {:ok, t()}
+  @spec new(map(), Child.t()) :: {:ok, t()} | {:error, [Zoi.Error.t()]}
   def new(%{} = attrs, %Child{} = child) do
-    {:ok, measure} =
-      attrs
-      |> create_struct(child)
-      |> add_bmi()
-      |> add_results(child)
+    with {:ok, measure} <- Zoi.parse(schema(), Map.put(attrs, :child, child)),
+         {:ok, measure} <- add_results(measure, child) do
+      :telemetry.execute([:growth, :measure, :submitted], %{count: 1}, %{
+        age_in_months: child.age_in_months,
+        gender: child.gender,
+        measure_date: child.measure_date,
+        has_weight: not is_nil(measure.weight),
+        has_height: not is_nil(measure.height),
+        has_head_circumference: not is_nil(measure.head_circumference)
+      })
 
-    :telemetry.execute([:growth, :measure, :submitted], %{count: 1}, %{
-      age_in_months: child.age_in_months,
-      gender: child.gender,
-      measure_date: child.measure_date,
-      has_weight: not is_nil(measure.weight),
-      has_height: not is_nil(measure.height),
-      has_head_circumference: not is_nil(measure.head_circumference)
-    })
-
-    {:ok, measure}
+      {:ok, measure}
+    end
   end
 
-  defp create_struct(%{} = attrs, %Child{} = child) do
-    %__MODULE__{
-      height: attrs.height,
-      weight: attrs.weight,
-      head_circumference: attrs.head_circumference,
-      child: child
-    }
-  end
-
-  defp add_bmi(%__MODULE__{weight: weight, height: height} = growth)
-       when is_number(weight) and is_number(height) do
-    %{growth | bmi: Calculate.bmi(weight, height)}
-  end
-
-  defp add_bmi(%__MODULE__{} = growth) do
-    %{growth | bmi: "no measure"}
-  end
-
-  defp add_results(%__MODULE__{bmi: "no measure"} = growth, _child) do
-    {:ok, %{growth | results: %{}}}
+  defp add_results(%__MODULE__{bmi: nil} = growth, _child) do
+    {:ok, %__MODULE__{growth | results: %{}}}
   end
 
   defp add_results(%__MODULE__{} = growth, %Child{} = child) do
     {:ok, Calculate.results(growth, child)}
+  end
+
+  @spec schema :: Zoi.schema()
+  def schema do
+    Zoi.transform(@schema, fn
+      %__MODULE__{height: height, weight: weight} = child
+      when not is_nil(height) and not is_nil(weight) ->
+        {:ok, %{child | bmi: Calculate.bmi(weight, height)}}
+
+      %__MODULE__{} = child ->
+        {:ok, %{child | bmi: nil}}
+    end)
   end
 end

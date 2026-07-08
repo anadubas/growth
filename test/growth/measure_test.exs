@@ -33,16 +33,13 @@ defmodule Growth.MeasureTest do
       assert Map.has_key?(measure.results, :bmi)
     end
 
-    test "sets BMI to 'no measure' if weight or height is missing", %{child: child} do
-      attrs = %{
-        weight: nil,
-        height: 100.0,
-        head_circumference: nil
-      }
+    test "sets BMI to nil if weight or height is missing", %{child: child} do
+      attrs = %{height: 100.0}
 
-      {:ok, measure} = Measure.new(attrs, child)
+      {:ok, %Measure{weight: nil, head_circumference: nil, height: 100.0} = measure} =
+        Measure.new(attrs, child)
 
-      assert measure.bmi == "no measure"
+      assert is_nil(measure.bmi)
     end
   end
 end
