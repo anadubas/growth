@@ -29,23 +29,13 @@ defmodule GrowthWeb.GrowthLive do
       |> measure_transforms()
       |> Growth.child_measure(socket.assigns.child)
 
-    chart_height = build_chart_data(:height, socket.assigns.child, measure.height)
-    chart_weight = build_chart_data(:weight, socket.assigns.child, measure.weight)
-    chart_bmi = build_chart_data(:bmi, socket.assigns.child, measure.bmi)
-
-    chart_hc =
-      build_chart_data(:head_circumference, socket.assigns.child, measure.head_circumference)
+    charts = build_all_charts(measure)
 
     {:noreply,
      assign(socket,
        measure: measure,
        step: :results,
-       charts: %{
-         height: chart_height,
-         weight: chart_weight,
-         bmi: chart_bmi,
-         head_circ: chart_hc
-       },
+       charts: charts,
        child: socket.assigns.child
      )}
   end
@@ -82,6 +72,20 @@ defmodule GrowthWeb.GrowthLive do
   end
 
   defp default_child, do: %Child{name: "", gender: "", birthday: Date.utc_today()}
+
+  defp build_all_charts(%Measure{} = measure) do
+    height = build_chart_data(:height, measure.child, measure.height)
+    weight = build_chart_data(:weight, measure.child, measure.weight)
+    bmi = build_chart_data(:bmi, measure.child, measure.bmi)
+    hc = build_chart_data(:head_circumference, measure.child, measure.head_circumference)
+
+    %{
+      height: height,
+      weight: weight,
+      bmi: bmi,
+      head_circ: hc
+    }
+  end
 
   defp build_chart_data(
          type,
