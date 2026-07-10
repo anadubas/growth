@@ -13,6 +13,7 @@ defmodule GrowthWeb.GrowthLive do
        child: default_child(),
        measure: %Measure{},
        child_form: Form.child_form(%{}, :child),
+       measure_form: Form.measure_form(%{}, :measure),
        step: :child_info
      )}
   end
@@ -26,6 +27,7 @@ defmodule GrowthWeb.GrowthLive do
          socket,
          child: child,
          child_form: Form.child_form(ctx, :child),
+         measure_form: Form.measure_form(%{}, :measure),
          step: :measure_info
        )}
     else
@@ -45,22 +47,34 @@ defmodule GrowthWeb.GrowthLive do
   end
 
   @impl true
-  def handle_event("save_measure", %{"measure" => measure_params}, socket) do
-    {:ok, measure} =
-      measure_params
-      |> map_keys_to_atom()
-      |> measure_transforms()
-      |> Growth.child_measure(socket.assigns.child)
+  def handle_event("save_measure", %{"measure" => params}, socket) do
+    with %Zoi.Context{valid?: true} = ctx <- Form.measure_parse(params),
+         {:ok, measure} <- Growth.child_measure(ctx.parsed, socket.assigns.child) do
+      charts = build_all_charts(measure)
 
-    charts = build_all_charts(measure)
+      {:noreply,
+       assign(socket,
+         measure: measure,
+         measure_form: Form.measure_form(ctx, :measure),
+         charts: charts,
+         step: :results
+       )}
+    else
+      %Zoi.Context{} = ctx ->
+        {:noreply,
+         assign(socket, measure_form: Form.measure_form(ctx, :measure, action: :validate))}
 
-    {:noreply,
-     assign(socket,
-       measure: measure,
-       step: :results,
-       charts: charts,
-       child: socket.assigns.child
-     )}
+      {:error, errors} ->
+        ctx =
+          params
+          |> Form.measure_parse()
+          |> then(
+            &Enum.reduce(errors, &1, fn error, ctx -> Zoi.Context.add_error(ctx, error) end)
+          )
+
+        {:noreply,
+         assign(socket, measure_form: Form.measure_form(ctx, :measure, action: :validate))}
+    end
   end
 
   @impl true
@@ -70,34 +84,9 @@ defmodule GrowthWeb.GrowthLive do
        child: default_child(),
        measure: %Measure{},
        child_form: Form.child_form(%{}, :child),
+       measure_form: Form.measure_form(%{}, :measure),
        step: :child_info
      )}
-  end
-
-  def map_keys_to_atom(attrs) do
-    Enum.into(attrs, %{}, fn {key, value} -> {String.to_atom(key), value} end)
-  end
-
-  def child_transforms(attrs) do
-    Enum.into(attrs, %{}, fn
-      {:birthday, value} ->
-        {:birthday, Date.from_iso8601!(value)}
-
-      {key, value} ->
-        {key, value}
-    end)
-  end
-
-  def measure_transforms(attrs) do
-    Enum.into(attrs, %{}, fn {key, value} ->
-      case Float.parse(value) do
-        {converted_value, _} ->
-          {key, converted_value}
-
-        _ ->
-          {key, nil}
-      end
-    end)
   end
 
   defp default_child, do: %Child{name: "", gender: "", birthday: Date.utc_today()}
