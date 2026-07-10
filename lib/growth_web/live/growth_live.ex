@@ -4,21 +4,44 @@ defmodule GrowthWeb.GrowthLive do
   alias Growth.Child
   alias Growth.LoadReferenceChart
   alias Growth.Measure
+  alias GrowthWeb.Form
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, child: default_child(), measure: %Measure{}, step: :child_info)}
+    {:ok,
+     assign(socket,
+       child: default_child(),
+       measure: %Measure{},
+       child_form: Form.child_form(%{}, :child),
+       step: :child_info
+     )}
   end
 
   @impl true
-  def handle_event("save_child", %{"child" => child_params}, socket) do
-    {:ok, child} =
-      child_params
-      |> map_keys_to_atom()
-      |> child_transforms()
-      |> Growth.create_child()
+  def handle_event("save_child", %{"child" => params}, socket) do
+    with %Zoi.Context{valid?: true} = ctx <- Form.child_parse(params),
+         {:ok, child} <- Growth.create_child(ctx.parsed) do
+      {:noreply,
+       assign(
+         socket,
+         child: child,
+         child_form: Form.child_form(ctx, :child),
+         step: :measure_info
+       )}
+    else
+      %Zoi.Context{} = ctx ->
+        {:noreply, assign(socket, child_form: Form.child_form(ctx, :child, action: :validate))}
 
-    {:noreply, assign(socket, child: child, step: :measure_info)}
+      {:error, errors} ->
+        ctx =
+          params
+          |> Form.child_parse()
+          |> then(
+            &Enum.reduce(errors, &1, fn error, ctx -> Zoi.Context.add_error(ctx, error) end)
+          )
+
+        {:noreply, assign(socket, child_form: Form.child_form(ctx, :child, action: :validate))}
+    end
   end
 
   @impl true
@@ -42,7 +65,13 @@ defmodule GrowthWeb.GrowthLive do
 
   @impl true
   def handle_event("reset", _params, socket) do
-    {:noreply, assign(socket, child: default_child(), measure: %Measure{}, step: :child_info)}
+    {:noreply,
+     assign(socket,
+       child: default_child(),
+       measure: %Measure{},
+       child_form: Form.child_form(%{}, :child),
+       step: :child_info
+     )}
   end
 
   def map_keys_to_atom(attrs) do
