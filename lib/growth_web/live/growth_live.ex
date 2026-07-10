@@ -7,13 +7,7 @@ defmodule GrowthWeb.GrowthLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    default_child = %Child{
-      name: "",
-      gender: "",
-      birthday: ~D[2000-01-01]
-    }
-
-    {:ok, assign(socket, child: default_child, measure: %Measure{}, step: :child_info)}
+    {:ok, assign(socket, child: default_child(), measure: %Measure{}, step: :child_info)}
   end
 
   @impl true
@@ -58,13 +52,7 @@ defmodule GrowthWeb.GrowthLive do
 
   @impl true
   def handle_event("reset", _params, socket) do
-    default_child = %Child{
-      name: "",
-      gender: "",
-      birthday: ~D[2000-01-01]
-    }
-
-    {:noreply, assign(socket, child: default_child, measure: %Measure{}, step: :child_info)}
+    {:noreply, assign(socket, child: default_child(), measure: %Measure{}, step: :child_info)}
   end
 
   def map_keys_to_atom(attrs) do
@@ -92,6 +80,8 @@ defmodule GrowthWeb.GrowthLive do
       end
     end)
   end
+
+  defp default_child, do: %Child{name: "", gender: "", birthday: Date.utc_today()}
 
   defp build_chart_data(
          type,
