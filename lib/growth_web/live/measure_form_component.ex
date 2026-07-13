@@ -34,11 +34,12 @@ defmodule GrowthWeb.MeasureFormComponent do
         }
       }
   """
-  use Phoenix.LiveComponent
+  use GrowthWeb, :live_component
 
+  @impl true
   def render(assigns) do
     ~H"""
-    <form class="card" phx-submit="save_measure">
+    <form id="measure-form" class="card" phx-change="validate_measure" phx-submit="save_measure">
       <fieldset class="fieldset card-body w-full max-w-lg mx-auto bg-base-300 shadow-md rounded-lg p-6">
         <legend class="fieldset-legend card-title">Medidas:</legend>
 
@@ -52,7 +53,7 @@ defmodule GrowthWeb.MeasureFormComponent do
             value={@form[:height].value}
             class="w-full"
             placeholder="Altura"
-            required
+            phx-debounce="blur"
           />
         </label>
 
@@ -66,7 +67,7 @@ defmodule GrowthWeb.MeasureFormComponent do
             value={@form[:weight].value}
             class="w-full"
             placeholder="Peso"
-            required
+            phx-debounce="blur"
           />
         </label>
 
@@ -80,7 +81,7 @@ defmodule GrowthWeb.MeasureFormComponent do
             value={@form[:head_circumference].value}
             class="w-full"
             placeholder="Circunferência da Cabeça"
-            required
+            phx-debounce="blur"
           />
         </label>
 

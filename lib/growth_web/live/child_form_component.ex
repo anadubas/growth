@@ -28,13 +28,14 @@ defmodule GrowthWeb.ChildFormComponent do
   The component is typically the first step in the child growth assessment process,
   collecting the basic information needed for subsequent measurements and calculations.
   """
-  use Phoenix.LiveComponent
+  use GrowthWeb, :live_component
 
   alias Phoenix.HTML.Form
 
+  @impl true
   def render(assigns) do
     ~H"""
-    <form class="card" phx-submit="save_child">
+    <form id="child-form" class="card" phx-change="validate_child" phx-submit="save_child">
       <fieldset class="fieldset card-body w-full max-w-lg mx-auto bg-base-300 shadow-md rounded-lg p-6">
         <legend class="fieldset-legend card-title">A criança:</legend>
 
@@ -47,7 +48,7 @@ defmodule GrowthWeb.ChildFormComponent do
             value={@form[:name].value}
             class="w-full"
             placeholder="Nome"
-            required
+            phx-debounce="blur"
           />
         </label>
 
@@ -59,13 +60,13 @@ defmodule GrowthWeb.ChildFormComponent do
             name={@form[:birthday].name}
             value={Form.normalize_value("date", @form[:birthday].value)}
             class="w-full"
-            required
+            phx-debounce="blur"
           />
         </label>
 
         <label class="select select-primary w-full" for={@form[:gender].id}>
           <span class="label w-1/3">Sexo</span>
-          <select id={@form[:gender].id} name={@form[:gender].name} class="w-full" required>
+          <select id={@form[:gender].id} name={@form[:gender].name} class="w-full">
             <option value="">Selecione...</option>
             {Form.options_for_select(gender_options(), @form[:gender].value)}
           </select>
