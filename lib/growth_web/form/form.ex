@@ -18,13 +18,23 @@ defmodule GrowthWeb.Form do
   @spec measure_parse(map()) :: Zoi.Context.t()
   def measure_parse(attrs), do: Zoi.Form.parse(measure_schema(), attrs)
 
-  @spec child_form(map(), atom()) :: Phoenix.HTML.Form.t()
-  @spec child_form(map(), atom(), keyword()) :: Phoenix.HTML.Form.t()
-  def child_form(attrs, form_name, opts \\ []),
-    do: attrs |> child_parse() |> Phoenix.Component.to_form(Keyword.put(opts, :as, form_name))
+  @spec child_form(map() | Zoi.Context.t(), atom()) :: Phoenix.HTML.Form.t()
+  @spec child_form(map() | Zoi.Context.t(), atom(), keyword()) :: Phoenix.HTML.Form.t()
+  def child_form(attrs, form_name, opts \\ [])
 
-  @spec measure_form(map(), atom()) :: Phoenix.HTML.Form.t()
-  @spec measure_form(map(), atom(), keyword()) :: Phoenix.HTML.Form.t()
-  def measure_form(attrs, form_name, opts \\ []),
-    do: attrs |> measure_parse() |> Phoenix.Component.to_form(Keyword.put(opts, :as, form_name))
+  def child_form(%Zoi.Context{} = attrs, form_name, opts),
+    do: Phoenix.Component.to_form(attrs, Keyword.put(opts, :as, form_name))
+
+  def child_form(attrs, form_name, opts),
+    do: attrs |> child_parse() |> child_form(form_name, opts)
+
+  @spec measure_form(map() | Zoi.Context.t(), atom()) :: Phoenix.HTML.Form.t()
+  @spec measure_form(map() | Zoi.Context.t(), atom(), keyword()) :: Phoenix.HTML.Form.t()
+  def measure_form(attrs, form_name, opts \\ [])
+
+  def measure_form(%Zoi.Context{} = attrs, form_name, opts),
+    do: Phoenix.Component.to_form(attrs, Keyword.put(opts, :as, form_name))
+
+  def measure_form(attrs, form_name, opts),
+    do: attrs |> measure_parse() |> measure_form(form_name, opts)
 end
