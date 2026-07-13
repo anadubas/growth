@@ -1,10 +1,14 @@
 <div class="container max-w-7xl mx-auto p-4">
   <%= if @step == :child_info do %>
-    <.live_component module={GrowthWeb.ChildFormComponent} id="child-form" child={@child} />
+    <.live_component module={GrowthWeb.ChildFormComponent} id="child_form" form={@child_form} />
   <% end %>
 
   <%= if @step == :measure_info do %>
-    <.live_component module={GrowthWeb.MeasureFormComponent} id="measure-form" measure={@measure} />
+    <.live_component
+      module={GrowthWeb.MeasureFormComponent}
+      id="measure_form"
+      form={@measure_form}
+    />
   <% end %>
 
   <%= if @step == :results do %>

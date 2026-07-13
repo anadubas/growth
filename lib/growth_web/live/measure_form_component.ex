@@ -42,36 +42,42 @@ defmodule GrowthWeb.MeasureFormComponent do
       <fieldset class="fieldset card-body w-full max-w-lg mx-auto bg-base-300 shadow-md rounded-lg p-6">
         <legend class="fieldset-legend card-title">Medidas:</legend>
 
-        <label class="input input-primary w-full">
+        <label class="input input-primary w-full" for={@form[:height].id}>
           <span class="label w-1/3">Altura (cm)</span>
           <input
             type="number"
             step="0.01"
-            name="measure[height]"
+            id={@form[:height].id}
+            name={@form[:height].name}
+            value={@form[:height].value}
             class="w-full"
             placeholder="Altura"
             required
           />
         </label>
 
-        <label class="input input-primary w-full">
+        <label class="input input-primary w-full" for={@form[:weight].id}>
           <span class="label w-1/3">Peso (kg)</span>
           <input
             type="number"
             step="0.001"
-            name="measure[weight]"
+            id={@form[:weight].id}
+            name={@form[:weight].name}
+            value={@form[:weight].value}
             class="w-full"
             placeholder="Peso"
             required
           />
         </label>
 
-        <label class="input input-primary w-full">
+        <label class="input input-primary w-full" for={@form[:head_circumference].id}>
           <span class="label w-1/3"><abbr title="Circunferência">C.</abbr> Cabeça (cm)</span>
           <input
             type="number"
             step="0.01"
-            name="measure[head_circumference]"
+            id={@form[:head_circumference].id}
+            name={@form[:head_circumference].name}
+            value={@form[:head_circumference].value}
             class="w-full"
             placeholder="Circunferência da Cabeça"
             required
