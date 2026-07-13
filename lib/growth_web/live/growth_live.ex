@@ -20,20 +20,14 @@ defmodule GrowthWeb.GrowthLive do
 
   @impl true
   def handle_event("validate_child", %{"child" => params}, socket) do
-    form =
-      params
-      |> Form.child_parse()
-      |> Form.child_form(:child)
+    form = Form.child_form(params, :child)
 
     {:noreply, assign(socket, child_form: form)}
   end
 
   @impl true
   def handle_event("validate_measure", %{"measure" => params}, socket) do
-    form =
-      params
-      |> Form.measure_parse()
-      |> Form.measure_form(:measure)
+    form = Form.measure_form(params, :measure)
 
     {:noreply, assign(socket, measure_form: form)}
   end
