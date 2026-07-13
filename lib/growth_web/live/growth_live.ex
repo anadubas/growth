@@ -19,6 +19,26 @@ defmodule GrowthWeb.GrowthLive do
   end
 
   @impl true
+  def handle_event("validate_child", %{"child" => params}, socket) do
+    form =
+      params
+      |> Form.child_parse()
+      |> Form.child_form(:child)
+
+    {:noreply, assign(socket, child_form: form)}
+  end
+
+  @impl true
+  def handle_event("validate_measure", %{"measure" => params}, socket) do
+    form =
+      params
+      |> Form.measure_parse()
+      |> Form.measure_form(:measure)
+
+    {:noreply, assign(socket, measure_form: form)}
+  end
+
+  @impl true
   def handle_event("save_child", %{"child" => params}, socket) do
     with %Zoi.Context{valid?: true} = ctx <- Form.child_parse(params),
          {:ok, child} <- Growth.create_child(ctx.parsed) do
