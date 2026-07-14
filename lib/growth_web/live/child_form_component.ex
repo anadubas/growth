@@ -1,33 +1,19 @@
 defmodule GrowthWeb.ChildFormComponent do
   @moduledoc """
-  A LiveComponent that renders a form for collecting basic child information.
+  A LiveComponent that renders a DaisyUI-styled form for collecting basic
+  child information with Zoi-based validation.
 
-  This component provides a user interface for collecting essential child data:
+  Fields:
 
   * Name (text input)
   * Birthday (date input)
   * Gender (select input with options for "Menina" and "Menino")
 
-  The form features:
-
-  * Required field validation
-  * DaisyUI styled inputs and layout
-  * Responsive design with max-width constraints
-  * Card layout with shadow and rounded corners
-
-  When submitted, the form triggers a "save_child" event with data structured as:
-
-      %{
-        "child" => %{
-          "name" => "...",
-          "birthday" => "YYYY-MM-DD",
-          "gender" => "female" | "male"
-        }
-      }
-
-  The component is typically the first step in the child growth assessment process,
-  collecting the basic information needed for subsequent measurements and calculations.
+  Validation fires on blur (via `phx-debounce`) and on submit through the
+  `validate_child` / `save_child` events handled by the parent LiveView.
+  Per-field errors render only after the field has been visited.
   """
+
   use GrowthWeb, :live_component
 
   alias Phoenix.HTML.Form
