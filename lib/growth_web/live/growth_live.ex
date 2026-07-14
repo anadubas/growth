@@ -4,93 +4,120 @@ defmodule GrowthWeb.GrowthLive do
   alias Growth.Child
   alias Growth.LoadReferenceChart
   alias Growth.Measure
+  alias GrowthWeb.Form
 
   @impl true
   def mount(_params, _session, socket) do
-    default_child = %Child{
-      name: "",
-      gender: "",
-      birthday: ~D[2000-01-01]
-    }
-
-    {:ok, assign(socket, child: default_child, measure: %Measure{}, step: :child_info)}
-  end
-
-  @impl true
-  def handle_event("save_child", %{"child" => child_params}, socket) do
-    {:ok, child} =
-      child_params
-      |> map_keys_to_atom()
-      |> child_transforms()
-      |> Growth.create_child()
-
-    {:noreply, assign(socket, child: child, step: :measure_info)}
-  end
-
-  @impl true
-  def handle_event("save_measure", %{"measure" => measure_params}, socket) do
-    {:ok, measure} =
-      measure_params
-      |> map_keys_to_atom()
-      |> measure_transforms()
-      |> Growth.child_measure(socket.assigns.child)
-
-    chart_height = build_chart_data(:height, socket.assigns.child, measure.height)
-    chart_weight = build_chart_data(:weight, socket.assigns.child, measure.weight)
-    chart_bmi = build_chart_data(:bmi, socket.assigns.child, measure.bmi)
-
-    chart_hc =
-      build_chart_data(:head_circumference, socket.assigns.child, measure.head_circumference)
-
-    {:noreply,
+    {:ok,
      assign(socket,
-       measure: measure,
-       step: :results,
-       charts: %{
-         height: chart_height,
-         weight: chart_weight,
-         bmi: chart_bmi,
-         head_circ: chart_hc
-       },
-       child: socket.assigns.child
+       child: default_child(),
+       measure: %Measure{},
+       charts: nil,
+       child_form: Form.child_form(%{}, :child),
+       measure_form: Form.measure_form(%{}, :measure),
+       step: :child_info
      )}
   end
 
   @impl true
+  def handle_event("validate_child", %{"child" => params}, socket) do
+    form = Form.child_form(params, :child)
+
+    {:noreply, assign(socket, child_form: form)}
+  end
+
+  @impl true
+  def handle_event("validate_measure", %{"measure" => params}, socket) do
+    form = Form.measure_form(params, :measure)
+
+    {:noreply, assign(socket, measure_form: form)}
+  end
+
+  @impl true
+  def handle_event("save_child", %{"child" => params}, socket) do
+    with %Zoi.Context{valid?: true} = ctx <- Form.child_parse(params),
+         {:ok, child} <- Growth.create_child(ctx.parsed) do
+      {:noreply,
+       assign(
+         socket,
+         child: child,
+         child_form: Form.child_form(ctx, :child),
+         step: :measure_info
+       )}
+    else
+      %Zoi.Context{} = ctx ->
+        {:noreply, assign(socket, child_form: Form.child_form(ctx, :child, action: :validate))}
+
+      {:error, errors} ->
+        ctx =
+          params
+          |> Form.child_parse()
+          |> then(
+            &Enum.reduce(errors, &1, fn error, ctx -> Zoi.Context.add_error(ctx, error) end)
+          )
+
+        {:noreply, assign(socket, child_form: Form.child_form(ctx, :child, action: :validate))}
+    end
+  end
+
+  @impl true
+  def handle_event("save_measure", %{"measure" => params}, socket) do
+    with %Zoi.Context{valid?: true} = ctx <- Form.measure_parse(params),
+         {:ok, measure} <- Growth.child_measure(ctx.parsed, socket.assigns.child) do
+      charts = build_all_charts(measure)
+
+      {:noreply,
+       assign(socket,
+         measure: measure,
+         measure_form: Form.measure_form(ctx, :measure),
+         charts: charts,
+         step: :results
+       )}
+    else
+      %Zoi.Context{} = ctx ->
+        {:noreply,
+         assign(socket, measure_form: Form.measure_form(ctx, :measure, action: :validate))}
+
+      {:error, errors} ->
+        ctx =
+          params
+          |> Form.measure_parse()
+          |> then(
+            &Enum.reduce(errors, &1, fn error, ctx -> Zoi.Context.add_error(ctx, error) end)
+          )
+
+        {:noreply,
+         assign(socket, measure_form: Form.measure_form(ctx, :measure, action: :validate))}
+    end
+  end
+
+  @impl true
   def handle_event("reset", _params, socket) do
-    default_child = %Child{
-      name: "",
-      gender: "",
-      birthday: ~D[2000-01-01]
+    {:noreply,
+     assign(socket,
+       child: default_child(),
+       measure: %Measure{},
+       charts: nil,
+       child_form: Form.child_form(%{}, :child),
+       measure_form: Form.measure_form(%{}, :measure),
+       step: :child_info
+     )}
+  end
+
+  defp default_child, do: %Child{name: "", gender: "", birthday: Date.utc_today()}
+
+  defp build_all_charts(%Measure{} = measure) do
+    height = build_chart_data(:height, measure.child, measure.height)
+    weight = build_chart_data(:weight, measure.child, measure.weight)
+    bmi = build_chart_data(:bmi, measure.child, measure.bmi)
+    hc = build_chart_data(:head_circumference, measure.child, measure.head_circumference)
+
+    %{
+      height: height,
+      weight: weight,
+      bmi: bmi,
+      head_circ: hc
     }
-
-    {:noreply, assign(socket, child: default_child, measure: %Measure{}, step: :child_info)}
-  end
-
-  def map_keys_to_atom(attrs) do
-    Enum.into(attrs, %{}, fn {key, value} -> {String.to_atom(key), value} end)
-  end
-
-  def child_transforms(attrs) do
-    Enum.into(attrs, %{}, fn
-      {:birthday, value} ->
-        {:birthday, Date.from_iso8601!(value)}
-
-      {key, value} ->
-        {key, value}
-    end)
-  end
-
-  def measure_transforms(attrs) do
-    Enum.into(attrs, %{}, fn {key, value} ->
-      case Float.parse(value) do
-        {converted_value, _} ->
-          {key, converted_value}
-
-        _ ->
-          {key, nil}
-      end
-    end)
   end
 
   defp build_chart_data(

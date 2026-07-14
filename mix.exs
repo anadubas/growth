@@ -41,7 +41,6 @@ defmodule Growth.MixProject do
       {:dialyxir, "~> 1.4.5", only: [:test, :dev], runtime: false},
       {:esbuild, "~> 0.10.0", runtime: Mix.env() == :dev},
       {:finch, "~> 0.23.0"},
-      {:floki, "~> 0.38.0", only: :test},
       {:gettext, "~> 1.0.0"},
       {:heroicons,
        github: "tailwindlabs/heroicons",
@@ -51,6 +50,7 @@ defmodule Growth.MixProject do
        compile: false,
        depth: 1},
       {:jason, "~> 1.4.0"},
+      {:lazy_html, "~> 0.1.0", only: :test},
       {:logger_json, "~> 7.0.0"},
       {:nimble_csv, "~> 1.3.0"},
       {:opentelemetry, "~> 1.7.0"},
@@ -68,7 +68,8 @@ defmodule Growth.MixProject do
       {:swoosh, "~> 1.26.0"},
       {:tailwind, "~> 0.5.0", runtime: Mix.env() == :dev},
       {:telemetry_metrics, "~> 1.1.0"},
-      {:telemetry_poller, "~> 1.3.0"}
+      {:telemetry_poller, "~> 1.3.0"},
+      {:zoi, "~> 0.18.0"}
     ]
   end
 
