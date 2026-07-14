@@ -49,15 +49,9 @@ defmodule GrowthWeb.ResultsComponent do
             {"Perímetro Cefálico", @measure.results.head_circumference}
           ] do %>
             <div class="card bg-base-200 rounded-box p-3">
-              <p>
-                <strong>{label}:</strong> {Map.get(@measure, String.to_atom(String.downcase(label)))}
-              </p>
-              <p><strong>Percentil:</strong> {result.percentile}%</p>
-              <% zscore = Float.round(result.zscore, 2) %>
-              <p>
-                <strong>Z-score:</strong>
-                {zscore}
-              </p>
+              <p><strong>{label}:</strong> {result_from_label(@measure, label)}</p>
+              <p><strong>Percentil:</strong> {format_score(result.percentile)}%</p>
+              <p><strong>Z-score:</strong> {format_score(result.zscore)}</p>
             </div>
           <% end %>
         </div>
@@ -106,5 +100,21 @@ defmodule GrowthWeb.ResultsComponent do
       </div>
     </div>
     """
+  end
+
+  defp result_from_label(measure, label) do
+    %{
+      "Altura" => :height,
+      "Peso" => :weight,
+      "IMC" => :bmi,
+      "Perímetro Cefálico" => :head_circumference
+    }
+    |> Map.get(label)
+    |> then(&Map.get(measure, &1))
+    |> format_score()
+  end
+
+  defp format_score(score) do
+    Float.round(score, 2)
   end
 end
