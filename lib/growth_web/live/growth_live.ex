@@ -12,6 +12,7 @@ defmodule GrowthWeb.GrowthLive do
      assign(socket,
        child: default_child(),
        measure: %Measure{},
+       charts: nil,
        child_form: Form.child_form(%{}, :child),
        measure_form: Form.measure_form(%{}, :measure),
        step: :child_info
@@ -41,7 +42,6 @@ defmodule GrowthWeb.GrowthLive do
          socket,
          child: child,
          child_form: Form.child_form(ctx, :child),
-         measure_form: Form.measure_form(%{}, :measure),
          step: :measure_info
        )}
     else
