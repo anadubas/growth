@@ -27,7 +27,7 @@ defmodule GrowthWeb.ResultsComponent do
 
   If no results are available, it displays a "Resultados Indisponíveis" message.
   """
-  use Phoenix.LiveComponent
+  use GrowthWeb, :live_component
 
   def render(assigns) do
     ~H"""
@@ -98,6 +98,10 @@ defmodule GrowthWeb.ResultsComponent do
           ></canvas>
         </div>
       </div>
+
+      <div class="text-center">
+        <.button id="reset-btn" class="btn btn-primary" phx-click="reset">Reiniciar</.button>
+      </div>
     </div>
     """
   end
@@ -114,7 +118,7 @@ defmodule GrowthWeb.ResultsComponent do
     |> format_score()
   end
 
-  defp format_score(score) do
-    Float.round(score, 2)
+  defp format_score(score) when is_number(score) do
+    Float.round(score / 1, 2)
   end
 end
