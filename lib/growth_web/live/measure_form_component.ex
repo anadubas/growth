@@ -56,6 +56,9 @@ defmodule GrowthWeb.MeasureFormComponent do
             phx-debounce="blur"
           />
         </label>
+        <p :for={error <- errors_for(@form[:height])} class="text-sm text-error mt-1">
+          {translate_error(error)}
+        </p>
 
         <label class="input input-primary w-full" for={@form[:weight].id}>
           <span class="label w-1/3">Peso (kg)</span>
@@ -70,6 +73,9 @@ defmodule GrowthWeb.MeasureFormComponent do
             phx-debounce="blur"
           />
         </label>
+        <p :for={error <- errors_for(@form[:weight])} class="text-sm text-error mt-1">
+          {translate_error(error)}
+        </p>
 
         <label class="input input-primary w-full" for={@form[:head_circumference].id}>
           <span class="label w-1/3"><abbr title="Circunferência">C.</abbr> Cabeça (cm)</span>
@@ -84,6 +90,9 @@ defmodule GrowthWeb.MeasureFormComponent do
             phx-debounce="blur"
           />
         </label>
+        <p :for={error <- errors_for(@form[:head_circumference])} class="text-sm text-error mt-1">
+          {translate_error(error)}
+        </p>
 
         <div class="card-actions justify-center">
           <button type="submit" class="btn btn-primary">Calcular</button>
@@ -91,5 +100,10 @@ defmodule GrowthWeb.MeasureFormComponent do
       </fieldset>
     </form>
     """
+  end
+
+  @spec errors_for(Phoenix.HTML.FormField.t()) :: [{String.t(), keyword()}]
+  defp errors_for(field) do
+    if Phoenix.Component.used_input?(field), do: field.errors, else: []
   end
 end

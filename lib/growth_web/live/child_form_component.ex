@@ -51,6 +51,9 @@ defmodule GrowthWeb.ChildFormComponent do
             phx-debounce="blur"
           />
         </label>
+        <p :for={error <- errors_for(@form[:name])} class="text-sm text-error mt-1">
+          {translate_error(error)}
+        </p>
 
         <label class="input input-primary w-full" for={@form[:birthday].id}>
           <span class="label w-1/3">Nascimento</span>
@@ -63,6 +66,9 @@ defmodule GrowthWeb.ChildFormComponent do
             phx-debounce="blur"
           />
         </label>
+        <p :for={error <- errors_for(@form[:birthday])} class="text-sm text-error mt-1">
+          {translate_error(error)}
+        </p>
 
         <label class="select select-primary w-full" for={@form[:gender].id}>
           <span class="label w-1/3">Sexo</span>
@@ -71,6 +77,9 @@ defmodule GrowthWeb.ChildFormComponent do
             {Form.options_for_select(gender_options(), @form[:gender].value)}
           </select>
         </label>
+        <p :for={error <- errors_for(@form[:gender])} class="text-sm text-error mt-1">
+          {translate_error(error)}
+        </p>
 
         <div class="card-actions justify-center">
           <button type="submit" class="btn btn-primary">Próximo</button>
@@ -78,6 +87,10 @@ defmodule GrowthWeb.ChildFormComponent do
       </fieldset>
     </form>
     """
+  end
+
+  defp errors_for(field) do
+    if Phoenix.Component.used_input?(field), do: field.errors, else: []
   end
 
   defp gender_options, do: [{"Menina", "female"}, {"Menino", "male"}]
