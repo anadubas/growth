@@ -1,5 +1,4 @@
 defmodule GrowthWeb.GrowthLiveTest do
-  @moduledoc false
   use GrowthWeb.LiveCase, async: false
 
   describe "mount" do
