@@ -16,6 +16,7 @@ defmodule Growth.Child do
     * `:birthday` - The child's birth date (`Date.t()`).
     * `:measure_date` - The date when the anthropometric measurement was taken (defaults to today).
     * `:age_in_months` - Calculated age in months based on birthday and measurement date.
+    * `:age_in_decimal` - Calculate age in months, with decimal precision, based on birthday and measure date.
 
   ## Example
 
@@ -27,72 +28,62 @@ defmodule Growth.Child do
 
   alias Growth.Calculate
 
-  @type t :: %__MODULE__{
-          name: String.t() | nil,
-          gender: String.t() | nil,
-          birthday: Date.t() | nil,
-          measure_date: Date.t() | nil,
-          age_in_months: number() | nil,
-          age_in_decimal: float() | nil
-        }
+  @schema Zoi.struct(
+            __MODULE__,
+            %{
+              name: Zoi.string() |> Zoi.required(),
+              gender: Zoi.enum(["male", "female"]) |> Zoi.required(),
+              birthday: Zoi.date() |> Zoi.required(),
+              measure_date: Zoi.date() |> Zoi.nullish(),
+              age_in_months: Zoi.integer() |> Zoi.min(0) |> Zoi.nullish(),
+              age_in_decimal: Zoi.float() |> Zoi.min(0.0) |> Zoi.nullish()
+            },
+            coerce: true
+          )
 
-  @enforce_keys [:name, :gender, :birthday]
+  @type t :: unquote(Zoi.type_spec(@schema))
 
-  defstruct [
-    :name,
-    :gender,
-    :birthday,
-    :measure_date,
-    :age_in_months,
-    :age_in_decimal
-  ]
+  @enforce_keys Zoi.Struct.enforce_keys(@schema)
+
+  defstruct Zoi.Struct.struct_fields(@schema)
 
   @doc """
   Create child
   """
-  @spec new(map()) :: {:ok, t()}
+  @spec new(map()) :: {:ok, t()} | {:error, [Zoi.Error.t()]}
   def new(attrs) do
-    {:ok, child} =
-      attrs
-      |> create_struct()
-      |> add_measure_date()
-      |> add_age_in_months()
-      |> add_age_in_decimal()
+    case Zoi.parse(schema(), attrs) do
+      {:ok, child} ->
+        :telemetry.execute([:growth, :child, :created], %{count: 1}, %{
+          age_in_months: child.age_in_months,
+          age_in_decimal: child.age_in_decimal,
+          gender: child.gender,
+          measure_date: child.measure_date
+        })
 
-    :telemetry.execute([:growth, :child, :created], %{count: 1}, %{
-      age_in_months: child.age_in_months,
-      age_in_decimal: child.age_in_decimal,
-      gender: child.gender,
-      measure_date: child.measure_date
-    })
+        {:ok, child}
 
-    {:ok, child}
+      error ->
+        error
+    end
   end
 
-  defp create_struct(attrs) do
-    %__MODULE__{
-      name: attrs.name,
-      birthday: attrs.birthday,
-      gender: attrs.gender
-    }
-  end
+  @spec schema :: Zoi.schema()
+  def schema do
+    Zoi.transform(@schema, fn %__MODULE__{measure_date: measure_date, birthday: birthday} = child ->
+      measure_date = (is_nil(measure_date) && Date.utc_today()) || measure_date
+      age_in_months = Calculate.age_in_months(birthday, measure_date)
+      age_in_decimal = Calculate.in_months_decimal(birthday, measure_date)
 
-  defp add_measure_date(child) do
-    %{child | measure_date: Date.utc_today()}
-  end
+      child =
+        %__MODULE__{
+          child
+          | measure_date: measure_date,
+            age_in_months: age_in_months,
+            age_in_decimal: age_in_decimal
+        }
 
-  def add_age_in_months(%__MODULE__{birthday: birthday, measure_date: measure_date} = child)
-      when not is_nil(birthday) and not is_nil(measure_date) do
-    %{child | age_in_months: Calculate.age_in_months(birthday, measure_date)}
-  end
-
-  def add_age_in_decimal(%__MODULE__{birthday: birthday, measure_date: measure_date} = child)
-      when not is_nil(birthday) and not is_nil(measure_date) do
-    {:ok, %{child | age_in_decimal: Calculate.in_months_decimal(birthday, measure_date)}}
-  end
-
-  def add_age_in_decimal(%__MODULE__{birthday: birthday, measure_date: nil} = child)
-      when not is_nil(birthday) do
-    child |> add_measure_date() |> add_age_in_decimal()
+      {:ok, child}
+    end)
   end
 end

@@ -24,10 +24,12 @@ defmodule Growth.LoadReference do
   ## Returns
     - `{:ok, reference_data}` if the data is found in the ETS table.
     - `{:error, reason}` if the data is invalid or not found.
+    - `{:error, [Zoi.Error.t()]} if the child data was not valid.
   """
-  @spec load_data(atom(), Growth.Child.t()) :: {:ok, map()} | {:error, String.t()}
+  @spec load_data(atom(), Growth.Child.t()) ::
+          {:ok, map()} | {:error, String.t()} | {:error, [Zoi.Error.t()]}
   def load_data(data_type, %Growth.Child{gender: _gender, age_in_decimal: nil} = child) do
-    with {:ok, updated_child} <- Growth.Child.add_age_in_decimal(child) do
+    with {:ok, updated_child} <- Zoi.parse(Growth.Child.schema(), child) do
       load_data(data_type, updated_child)
     end
   end
