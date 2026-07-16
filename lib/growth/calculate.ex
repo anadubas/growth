@@ -86,14 +86,14 @@ defmodule Growth.Calculate do
         head_circumference_result =
           calculate_result(head_circumference, :head_circumference, child)
 
-        result = %{
-          weight_result: weight_result,
-          height_result: height_result,
-          head_circumference_result: head_circumference_result,
-          bmi_result: bmi_result
+        results = %{
+          weight: weight_result,
+          height: height_result,
+          head_circumference: head_circumference_result,
+          bmi: bmi_result
         }
 
-        measure = %Measure{growth | results: result}
+        measure = %Measure{growth | results: results}
 
         {measure, %{count: 1},
          %{
@@ -108,16 +108,6 @@ defmodule Growth.Calculate do
          }}
       end
     )
-
-    %Measure{
-      growth
-      | results: %{
-          weight: calculate_result(weight, :weight, child),
-          height: calculate_result(height, :height, child),
-          head_circumference: calculate_result(head_circumference, :head_circumference, child),
-          bmi: calculate_result(bmi, :bmi, child)
-        }
-    }
   end
 
   @doc """
