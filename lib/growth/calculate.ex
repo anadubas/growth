@@ -15,6 +15,7 @@ defmodule Growth.Calculate do
   alias Growth.LoadReference
   alias Growth.Measure
   alias Growth.Percentile
+  alias Growth.Result
   alias Growth.Zscore
 
   @days_in_month 30.4375
@@ -99,10 +100,10 @@ defmodule Growth.Calculate do
          %{
            age_in_months: child.age_in_months,
            gender: child.gender,
-           has_bmi_result: bmi_result != "no results",
-           has_head_circumference_result: head_circumference_result != "no results",
-           has_height_result: height_result != "no results",
-           has_weight_result: weight_result != "no results",
+           has_bmi_result: bmi_result.available?,
+           has_head_circumference_result: head_circumference_result.available?,
+           has_height_result: height_result.available?,
+           has_weight_result: weight_result.available?,
            measure_date: child.measure_date,
            success: true
          }}
@@ -120,10 +121,9 @@ defmodule Growth.Calculate do
     - `gender`: The child's gender.
 
   ## Returns
-    - A map containing Z-scores, percentiles, and standard deviation values.
-    - If no data is found, returns the string "no results".
+    - A result struct
   """
-  @spec calculate_result(number(), atom(), Child.t()) :: map() | String.t()
+  @spec calculate_result(number(), atom(), Child.t()) :: Result.t()
   def calculate_result(measure, data_type, %Child{} = child)
       when is_number(measure) do
     :telemetry.span(
@@ -143,6 +143,7 @@ defmodule Growth.Calculate do
               |> add_percentile()
               |> add_classification(data_type)
               |> format_result()
+              |> then(&Result.new(true, &1))
 
             {result,
              %{
@@ -154,7 +155,7 @@ defmodule Growth.Calculate do
              }}
 
           {:error, _} ->
-            {"no data found",
+            {Result.new(false, %{}),
              %{
                age_in_months: child.age_in_months,
                data_type: data_type,
@@ -167,7 +168,7 @@ defmodule Growth.Calculate do
     )
   end
 
-  def calculate_result(_measure, _data_type, _child), do: "no results"
+  def calculate_result(_measure, _data_type, _child), do: Result.new(false, %{})
 
   defp add_zscore(%{l: l, m: m, s: s} = data, measure) do
     zscore = Zscore.calculate(measure, l, m, s)
