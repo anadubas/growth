@@ -121,4 +121,8 @@ defmodule GrowthWeb.ResultsComponent do
   defp format_score(score) when is_number(score) do
     Float.round(score / 1, 2)
   end
+
+  defp format_score(nil) do
+    "---"
+  end
 end
