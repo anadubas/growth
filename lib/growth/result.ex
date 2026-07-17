@@ -12,7 +12,8 @@ defmodule Growth.Result do
           sd3: null_non_neg_number(),
           zscore: null_number(),
           percentile: null_non_neg_number(),
-          classification: String.t() | nil
+          classification: String.t() | nil,
+          available?: boolean()
         }
   defstruct [
     :sd3neg,
