@@ -106,7 +106,7 @@ defmodule Growth.CalculateTest do
       refute result.results.head_circumference.available?
     end
 
-    test "returs a Measure struct with results for age around 19 years" do
+    test "returns a Measure struct with results for age around 19 years" do
       birthday = ~D[2007-07-16]
       measure_date = ~D[2026-07-16]
 
