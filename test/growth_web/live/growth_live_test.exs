@@ -116,7 +116,7 @@ defmodule GrowthWeb.GrowthLiveTest do
   end
 
   describe "save_measure" do
-    test "happy: advances to results step with populated chart data", %{conn: conn} do
+    test "advances to results step with populated chart data", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/")
       advance_to_measure_step(view)
 
@@ -147,7 +147,7 @@ defmodule GrowthWeb.GrowthLiveTest do
       end
     end
 
-    test "zoi-invalid: stays on measure step and renders error when height is negative", %{
+    test "stays on measure step and renders error when height is negative", %{
       conn: conn
     } do
       {:ok, view, _html} = live(conn, ~p"/")
@@ -162,6 +162,28 @@ defmodule GrowthWeb.GrowthLiveTest do
 
       assert has_element?(view, "#measure-form p.text-error")
       assert render(view) =~ "too small: must be at least 0"
+    end
+
+    test "over 60 months renders with head circumference unavailable", %{conn: conn} do
+      assert_renders_for_age(conn, 90,
+        available: ~w(chart-height chart-weight chart-bmi),
+        unavailable: ~w(chart-hc)
+      )
+    end
+
+    test "over 120 months renders with weight and head circumference unavailable",
+         %{conn: conn} do
+      assert_renders_for_age(conn, 180,
+        available: ~w(chart-height chart-bmi),
+        unavailable: ~w(chart-weight chart-hc)
+      )
+    end
+
+    test "over 228 months renders with all indicators unavailable", %{conn: conn} do
+      assert_renders_for_age(conn, 240,
+        available: [],
+        unavailable: ~w(chart-height chart-weight chart-bmi chart-hc)
+      )
     end
   end
 
@@ -193,6 +215,63 @@ defmodule GrowthWeb.GrowthLiveTest do
     view
     |> form("#measure-form", measure: valid_measure_attrs())
     |> render_submit()
+  end
+
+  # Submits a child of the given age (in months) plus measurements, then asserts
+  # the results step renders without crashing and that each chart either carries
+  # reference data or is empty, matching the WHO availability for that age.
+  defp assert_renders_for_age(conn, age_in_months, available: available, unavailable: unavailable) do
+    {:ok, view, _html} = live(conn, ~p"/")
+
+    view
+    |> form("#child-form", child: child_attrs_for_age(age_in_months))
+    |> render_submit()
+
+    html =
+      view
+      |> form("#measure-form", measure: measure_attrs_for_age())
+      |> render_submit()
+
+    # Core regression: the results step is reached without raising.
+    assert has_element?(view, "#chart-height")
+    refute html =~ "BadMapError"
+
+    for id <- available, do: assert_chart_has_reference(view, id)
+    for id <- unavailable, do: refute_chart_has_reference(view, id)
+  end
+
+  defp child_attrs_for_age(age_in_months) do
+    %{
+      "name" => "Jane Doe",
+      "gender" => "female",
+      "birthday" => birthday_months_ago(age_in_months)
+    }
+  end
+
+  defp measure_attrs_for_age do
+    %{"height" => "100", "weight" => "20", "head_circumference" => "50"}
+  end
+
+  # measure_date defaults to today, so age is derived from this birthday. A
+  # small day buffer keeps floor'd age_in_months comfortably in its bucket.
+  defp birthday_months_ago(months) do
+    Date.utc_today()
+    |> Date.add(-trunc(months * 30.4375 + 5))
+    |> Date.to_iso8601()
+  end
+
+  defp assert_chart_has_reference(view, id) do
+    chart = decode_chart_data(view, id)
+
+    assert chart["labels"] != [],
+           "expected reference data for ##{id} but labels were empty"
+  end
+
+  defp refute_chart_has_reference(view, id) do
+    chart = decode_chart_data(view, id)
+
+    assert chart["labels"] == [],
+           "expected no reference data for ##{id} but found #{length(chart["labels"])} points"
   end
 
   # HEEx HTML-escapes JSON in attributes ("  -> &quot;), so we unescape before Jason.decode!
