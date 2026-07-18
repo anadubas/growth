@@ -116,7 +116,7 @@ defmodule GrowthWeb.GrowthLive do
       height: height,
       weight: weight,
       bmi: bmi,
-      head_circ: head_circumference
+      head_circumference: head_circumference
     }
   end
 

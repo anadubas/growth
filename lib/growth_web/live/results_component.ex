@@ -42,62 +42,49 @@ defmodule GrowthWeb.ResultsComponent do
         <h2 class="text-lg font-bold mb-4">Resultados</h2>
 
         <div class="grid grid-cols-2 gap-4">
-          <%= for {label, result} <- [
-            {"Altura", @measure.results.height},
-            {"Peso", @measure.results.weight},
-            {"IMC", @measure.results.bmi},
-            {"Perímetro Cefálico", @measure.results.head_circumference}
+          <%= for {label, key} <- [
+            {"Altura", :height},
+            {"Peso", :weight},
+            {"IMC", :bmi},
+            {"Perímetro Cefálico", :head_circumference}
           ] do %>
+            <% result = @measure.results[key] %>
             <div class="card bg-base-200 rounded-box p-3">
-              <p><strong>{label}:</strong> {result_from_label(@measure, label)}</p>
-              <p><strong>Percentil:</strong> {format_score(result.percentile)}%</p>
-              <p><strong>Z-score:</strong> {format_score(result.zscore)}</p>
+              <p><strong>{label}:</strong> {format_score(Map.get(@measure, key))}</p>
+              <%= if result.available? do %>
+                <p><strong>Percentil:</strong> {format_score(result.percentile)}%</p>
+                <p><strong>Z-score:</strong> {format_score(result.zscore)}</p>
+              <% else %>
+                <p class="text-sm text-error"><em>Indisponível para a idade</em></p>
+              <% end %>
             </div>
           <% end %>
         </div>
       </div>
 
-      <div class="card w-full mx-auto bg-base-300 shadow-md rounded-lg p-6">
-        <div class="w-full text-center mb-4">
-          <h3 class="text-lg font-bold">Altura / Idade</h3>
-          <canvas
-            id="chart-height"
-            class="w-full h-96"
-            phx-hook="GrowthChart"
-            data-chart={Jason.encode!(@charts.height)}
-          ></canvas>
+      <%= if any_result_available?(@measure.results) do %>
+        <div class="card w-full mx-auto bg-base-300 shadow-md rounded-lg p-6">
+          <%= for {title, chart_id, key} <- [
+            {"Altura / Idade", "chart-height", :height},
+            {"Peso / Idade", "chart-weight", :weight},
+            {"IMC / Idade", "chart-bmi", :bmi},
+            {"Perímetro Cefálico / Idade", "chart-hc", :head_circumference}
+          ] do %>
+            <% result = @measure.results[key] %>
+            <%= if result.available? do %>
+              <div class="w-full text-center mb-4">
+                <h3 class="text-lg font-bold">{title}</h3>
+                <canvas
+                  id={chart_id}
+                  class="w-full h-96"
+                  phx-hook="GrowthChart"
+                  data-chart={Jason.encode!(@charts[key])}
+                ></canvas>
+              </div>
+            <% end %>
+          <% end %>
         </div>
-
-        <div class="w-full text-center mb-4">
-          <h3 class="text-lg font-bold">Peso / Idade</h3>
-          <canvas
-            id="chart-weight"
-            class="w-full h-96"
-            phx-hook="GrowthChart"
-            data-chart={Jason.encode!(@charts.weight)}
-          ></canvas>
-        </div>
-
-        <div class="w-full text-center mb-4">
-          <h3 class="text-lg font-bold">IMC / Idade</h3>
-          <canvas
-            id="chart-bmi"
-            class="w-full h-96"
-            phx-hook="GrowthChart"
-            data-chart={Jason.encode!(@charts.bmi)}
-          ></canvas>
-        </div>
-
-        <div class="w-full text-center mb-4">
-          <h3 class="text-lg font-bold">Perímetro Cefálico / Idade</h3>
-          <canvas
-            id="chart-hc"
-            class="w-full h-96"
-            phx-hook="GrowthChart"
-            data-chart={Jason.encode!(@charts.head_circ)}
-          ></canvas>
-        </div>
-      </div>
+      <% end %>
 
       <div class="text-center">
         <.button id="reset-btn" class="btn btn-primary" phx-click="reset">Reiniciar</.button>
@@ -106,16 +93,8 @@ defmodule GrowthWeb.ResultsComponent do
     """
   end
 
-  defp result_from_label(measure, label) do
-    %{
-      "Altura" => :height,
-      "Peso" => :weight,
-      "IMC" => :bmi,
-      "Perímetro Cefálico" => :head_circumference
-    }
-    |> Map.get(label)
-    |> then(&Map.get(measure, &1))
-    |> format_score()
+  defp any_result_available?(results) do
+    Enum.any?(results, fn {_key, result} -> result.available? end)
   end
 
   defp format_score(score) when is_number(score) do
