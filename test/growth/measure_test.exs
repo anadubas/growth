@@ -18,6 +18,7 @@ defmodule Growth.MeasureTest do
 
     test "creates a Measure struct with BMI and results", %{child: child} do
       attrs = %{
+        measure_date: ~D[2025-01-01],
         weight: 16.0,
         height: 100.0,
         head_circumference: 49.0
@@ -25,6 +26,8 @@ defmodule Growth.MeasureTest do
 
       {:ok, measure} = Measure.new(attrs, child)
 
+      assert measure.age_in_months == 60
+      assert measure.age_in_decimal == 60.02
       assert measure.weight == 16.0
       assert measure.height == 100.0
       assert measure.head_circumference == 49.0
