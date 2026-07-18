@@ -107,26 +107,30 @@ defmodule GrowthWeb.GrowthLive do
   defp default_child, do: %Child{name: "", gender: "", birthday: Date.utc_today()}
 
   defp build_all_charts(%Measure{} = measure) do
-    height = build_chart_data(:height, measure.child, measure.height)
-    weight = build_chart_data(:weight, measure.child, measure.weight)
-    bmi = build_chart_data(:bmi, measure.child, measure.bmi)
-    hc = build_chart_data(:head_circumference, measure.child, measure.head_circumference)
+    height = build_chart_data(:height, measure)
+    weight = build_chart_data(:weight, measure)
+    bmi = build_chart_data(:bmi, measure)
+    head_circumference = build_chart_data(:head_circumference, measure)
 
     %{
       height: height,
       weight: weight,
       bmi: bmi,
-      head_circ: hc
+      head_circumference: head_circumference
     }
   end
 
   defp build_chart_data(
          type,
-         %Child{gender: gender, age_in_months: reference_age_in_months},
-         value
+         %Measure{
+           child: %Child{gender: gender, age_in_months: reference_age_in_months},
+           results: results
+         } = measure
        ) do
     age_range_in_months = 5
     age_subdivisions = 10
+
+    value = Map.get(measure, type)
 
     default_data = %{
       child: [%{x: reference_age_in_months, y: value}],
@@ -140,27 +144,31 @@ defmodule GrowthWeb.GrowthLive do
       sd0: []
     }
 
-    case LoadReferenceChart.load_data(
-           type,
-           gender,
-           reference_age_in_months,
-           age_range_in_months,
-           age_subdivisions
-         ) do
-      {:ok, data} ->
-        Enum.reduce(data, default_data, fn point, acc ->
-          %{
-            acc
-            | labels: [point.age | acc.labels],
-              sd3neg: [%{x: point.age, y: point.sd3neg} | acc.sd3neg],
-              sd2neg: [%{x: point.age, y: point.sd2neg} | acc.sd2neg],
-              sd1neg: [%{x: point.age, y: point.sd1neg} | acc.sd1neg],
-              sd0: [%{x: point.age, y: point.sd0} | acc.sd0],
-              sd1: [%{x: point.age, y: point.sd1} | acc.sd1],
-              sd2: [%{x: point.age, y: point.sd2} | acc.sd2],
-              sd3: [%{x: point.age, y: point.sd3} | acc.sd3]
-          }
-        end)
+    with true <- results |> Map.get(type, %{}) |> Map.get(:available?, false),
+         {:ok, data} <-
+           LoadReferenceChart.load_data(
+             type,
+             gender,
+             reference_age_in_months,
+             age_range_in_months,
+             age_subdivisions
+           ) do
+      Enum.reduce(data, default_data, fn point, acc ->
+        %{
+          acc
+          | labels: [point.age | acc.labels],
+            sd3neg: [%{x: point.age, y: point.sd3neg} | acc.sd3neg],
+            sd2neg: [%{x: point.age, y: point.sd2neg} | acc.sd2neg],
+            sd1neg: [%{x: point.age, y: point.sd1neg} | acc.sd1neg],
+            sd0: [%{x: point.age, y: point.sd0} | acc.sd0],
+            sd1: [%{x: point.age, y: point.sd1} | acc.sd1],
+            sd2: [%{x: point.age, y: point.sd2} | acc.sd2],
+            sd3: [%{x: point.age, y: point.sd3} | acc.sd3]
+        }
+      end)
+    else
+      false ->
+        default_data
 
       {:error, _} ->
         default_data

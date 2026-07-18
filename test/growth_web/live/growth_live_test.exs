@@ -39,10 +39,8 @@ defmodule GrowthWeb.GrowthLiveTest do
 
       assert has_element?(view, "#child-form")
       refute has_element?(view, "#measure-form")
-
       assert has_element?(view, ~s|#child-form input[name="child[name]"][value="Jane Doe"]|)
-
-      expected_birthday = Date.to_iso8601(Date.add(Date.utc_today(), -365 * 2))
+      expected_birthday = birthday_months_ago(24)
       assert html =~ ~s|value="#{expected_birthday}"|
     end
   end
@@ -116,13 +114,15 @@ defmodule GrowthWeb.GrowthLiveTest do
   end
 
   describe "save_measure" do
-    test "happy: advances to results step with populated chart data", %{conn: conn} do
+    test "advances to results step with populated chart data", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/")
+
       advance_to_measure_step(view)
 
-      view
-      |> form("#measure-form", measure: valid_measure_attrs())
-      |> render_submit()
+      html =
+        view
+        |> form("#measure-form", measure: valid_measure_attrs())
+        |> render_submit()
 
       assert has_element?(view, "#chart-height")
       assert has_element?(view, "#chart-weight")
@@ -145,12 +145,16 @@ defmodule GrowthWeb.GrowthLiveTest do
           assert Map.has_key?(chart, key), "chart #{id} missing key #{inspect(key)}"
         end
       end
+
+      # Every indicator is available for a 2-year-old, so no note is shown.
+      refute html =~ "Indisponível"
     end
 
-    test "zoi-invalid: stays on measure step and renders error when height is negative", %{
+    test "stays on measure step and renders error when height is negative", %{
       conn: conn
     } do
       {:ok, view, _html} = live(conn, ~p"/")
+
       advance_to_measure_step(view)
 
       view
@@ -162,6 +166,48 @@ defmodule GrowthWeb.GrowthLiveTest do
 
       assert has_element?(view, "#measure-form p.text-error")
       assert render(view) =~ "too small: must be at least 0"
+    end
+
+    # NOTE: (jpd) these are age limits for the availability of WHO reference data
+    for {age_limit, age, label, available, unavailable} <- [
+          {60, 90, "head circumference unavailable", ~w(chart-height chart-weight chart-bmi),
+           ~w(chart-hc)},
+          {120, 150, "weight and head circumference unavailable", ~w(chart-height chart-bmi),
+           ~w(chart-weight chart-hc)},
+          {228, 240, "all indicators unavailable", [],
+           ~w(chart-height chart-weight chart-bmi chart-hc)}
+        ] do
+      test "over #{age_limit} months renders with #{label}", %{conn: conn} do
+        {:ok, view, _html} = live(conn, ~p"/")
+
+        view
+        |> form("#child-form", child: valid_child_attrs(unquote(age)))
+        |> render_submit()
+
+        html =
+          view
+          |> form("#measure-form", measure: valid_measure_attrs())
+          |> render_submit()
+
+        # Core regression: the results step is reached without raising. The reset
+        # button is always present on the results page; individual charts may be
+        # omitted when their reference data is out of range.
+        assert has_element?(view, "#reset-btn")
+        refute html =~ "BadMapError"
+
+        for id <- unquote(available) do
+          chart = decode_chart_data(view, id)
+          assert chart["labels"] != [], "expected reference data for ##{id} but labels were empty"
+        end
+
+        for id <- unquote(unavailable) do
+          refute has_element?(view, "##{id}"),
+                 "expected ##{id} to be absent (no reference data) but it was rendered"
+        end
+
+        assert html =~ "Indisponível para a idade",
+               "expected an unavailability note for out-of-range indicators"
+      end
     end
   end
 
@@ -181,17 +227,17 @@ defmodule GrowthWeb.GrowthLiveTest do
     end
   end
 
-  defp advance_to_measure_step(view) do
-    view
-    |> form("#child-form", child: valid_child_attrs())
-    |> render_submit()
-  end
-
   defp advance_to_results_step(view) do
     advance_to_measure_step(view)
 
     view
     |> form("#measure-form", measure: valid_measure_attrs())
+    |> render_submit()
+  end
+
+  defp advance_to_measure_step(view) do
+    view
+    |> form("#child-form", child: valid_child_attrs())
     |> render_submit()
   end
 
@@ -212,20 +258,28 @@ defmodule GrowthWeb.GrowthLiveTest do
     |> Jason.decode!()
   end
 
-  defp valid_child_attrs do
+  defp valid_child_attrs(age_in_months \\ 24) do
     %{
       "name" => "Jane Doe",
       "gender" => "female",
-      "birthday" => Date.utc_today() |> Date.add(-365 * 2) |> Date.to_iso8601()
+      "birthday" => birthday_months_ago(age_in_months)
     }
   end
 
-  defp invalid_child_attrs do
+  defp invalid_child_attrs(age_in_months \\ 24) do
     %{
       "name" => "An",
       "gender" => "female",
-      "birthday" => Date.utc_today() |> Date.add(-365 * 2) |> Date.to_iso8601()
+      "birthday" => birthday_months_ago(age_in_months)
     }
+  end
+
+  # measure_date defaults to today, so age is derived from this birthday. A
+  # small day buffer keeps floor'd age_in_months comfortably in its bucket.
+  defp birthday_months_ago(months) do
+    Date.utc_today()
+    |> Date.add(-trunc(months * 30.4375 + 5))
+    |> Date.to_iso8601()
   end
 
   defp valid_measure_attrs do
