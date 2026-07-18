@@ -123,7 +123,8 @@ defmodule GrowthWeb.GrowthLive do
   defp build_chart_data(
          type,
          %Measure{
-           child: %Child{gender: gender, age_in_months: reference_age_in_months},
+           age_in_months: reference_age_in_months,
+           child: %Child{gender: gender},
            results: results
          } = measure
        ) do
