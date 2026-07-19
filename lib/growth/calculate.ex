@@ -54,26 +54,26 @@ defmodule Growth.Calculate do
 
   ## Parameters
 
-  * `growth`: A `Measure` struct containing the child's anthropometric data (weight, height, etc.) and child's details.
+  * `measure`: A `Measure` struct containing the child's anthropometric data (weight, height, etc.) and child's details.
 
   ## Returns
 
   * A `Measure` struct with added growth results (Z-scores, percentiles, and SD values).
   """
   @spec results(Measure.t()) :: Measure.t()
-  def results(%Measure{child: %Child{} = child} = growth) do
+  def results(%Measure{child: %Child{} = child} = measure) do
     :telemetry.span(
       [:growth, :calculation],
       %{
-        age_in_months: growth.age_in_months,
+        age_in_months: measure.age_in_months,
         gender: child.gender,
-        measure_date: growth.measure_date
+        measure_date: measure.measure_date
       },
       fn ->
-        weight_result = calculate_result(:weight, growth)
-        height_result = calculate_result(:height, growth)
-        bmi_result = calculate_result(:bmi, growth)
-        head_circumference_result = calculate_result(:head_circumference, growth)
+        weight_result = calculate_result(:weight, measure)
+        height_result = calculate_result(:height, measure)
+        bmi_result = calculate_result(:bmi, measure)
+        head_circumference_result = calculate_result(:head_circumference, measure)
 
         results = %{
           weight: weight_result,
@@ -82,17 +82,17 @@ defmodule Growth.Calculate do
           bmi: bmi_result
         }
 
-        measure = %Measure{growth | results: results}
+        measure = %Measure{measure | results: results}
 
         {measure, %{count: 1},
          %{
-           age_in_months: growth.age_in_months,
+           age_in_months: measure.age_in_months,
            gender: child.gender,
            has_bmi_result: bmi_result.available?,
            has_head_circumference_result: head_circumference_result.available?,
            has_height_result: height_result.available?,
            has_weight_result: weight_result.available?,
-           measure_date: growth.measure_date,
+           measure_date: measure.measure_date,
            success: true
          }}
       end
@@ -112,61 +112,42 @@ defmodule Growth.Calculate do
   * A result struct
   """
   @spec calculate_result(atom(), Measure.t()) :: Result.t()
-  def calculate_result(data_type, %Measure{child: %Child{} = child} = growth) do
+  def calculate_result(data_type, %Measure{child: %Child{} = child} = measure) do
     :telemetry.span(
       [:growth, :calculation, :measure],
       %{
-        age_in_months: growth.age_in_months,
+        age_in_months: measure.age_in_months,
         gender: child.gender,
-        measure_date: growth.measure_date,
+        measure_date: measure.measure_date,
         data_type: data_type
       },
       fn ->
-        with measure when not is_nil(measure) <- Map.get(growth, data_type),
-             {:ok, data} <- LoadReference.load_data(data_type, growth) do
+        with value when is_number(value) <- Map.get(measure, data_type),
+             {:ok, data} <- LoadReference.load_data(data_type, measure) do
           result =
             data
-            |> add_zscore(measure)
+            |> add_zscore(value)
             |> add_percentile()
             |> add_classification(data_type)
             |> format_result()
             |> then(&Result.new(true, &1))
 
-          {result,
-           %{
-             age_in_months: growth.age_in_months,
-             data_type: data_type,
-             gender: child.gender,
-             measure_date: growth.measure_date,
-             success: true
-           }}
+          meta_for_calculate(measure, result, data_type, true)
         else
-          nil ->
-            {Result.new(false, %{}),
-             %{
-               age_in_months: growth.age_in_months,
-               data_type: data_type,
-               gender: child.gender,
-               measure_date: growth.measure_date,
-               success: false
-             }}
-
+          # NOTE: (jpd) fires when reference data is missing for this age/gender/type
           {:error, _} ->
-            {Result.new(false, %{}),
-             %{
-               age_in_months: growth.age_in_months,
-               data_type: data_type,
-               gender: child.gender,
-               measure_date: growth.measure_date,
-               success: false
-             }}
+            meta_for_calculate(measure, Result.new(false, %{}), data_type, false)
+
+          # NOTE: (jpd) fires when measurement is not numeric
+          _ ->
+            meta_for_calculate(measure, Result.new(false, %{}), data_type, false)
         end
       end
     )
   end
 
-  defp add_zscore(%{l: l, m: m, s: s} = data, measure) do
-    zscore = Zscore.calculate(measure, l, m, s)
+  defp add_zscore(%{l: l, m: m, s: s} = data, value) do
+    zscore = Zscore.calculate(value, l, m, s)
     Map.put(data, :zscore, zscore)
   end
 
@@ -193,5 +174,16 @@ defmodule Growth.Calculate do
       percentile: data.percentile,
       classification: data.classification
     }
+  end
+
+  defp meta_for_calculate(%Measure{} = measure, %Result{} = result, data_type, success) do
+    {result,
+     %{
+       age_in_months: measure.age_in_months,
+       data_type: data_type,
+       gender: measure.child.gender,
+       measure_date: measure.measure_date,
+       success: success
+     }}
   end
 end
