@@ -21,7 +21,7 @@ defmodule Growth.Calculate do
 
   @days_in_month 30.4375
 
-  @spec age_in_months(Date.t(), Date.t()) :: number()
+  @spec age_in_months(Date.t(), Date.t()) :: integer()
   def age_in_months(birthday, measure_date) do
     measure_date
     |> Date.diff(birthday)
