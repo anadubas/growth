@@ -15,12 +15,12 @@ defmodule Growth.LoadReference do
   """
 
   @doc """
-  Loads a reference data row from the ETS table for a given measurement type and child.
+  Loads a reference data row from the ETS table for a given measurement type and measure data.
 
   ## Parameters
 
   * `data_type`: The type of measurement, e.g., `:weight`, `:bmi`, etc.
-  * `child`: The child struct, which must have at least `:gender` and `:age_in_months`.
+  * `measure`: The measure struct, which must have at least child gender and age in months.
 
   ## Returns
 
@@ -30,12 +30,6 @@ defmodule Growth.LoadReference do
   """
   @spec load_data(atom(), Growth.Measure.t()) ::
           {:ok, map()} | {:error, String.t()} | {:error, [Zoi.Error.t()]}
-  def load_data(data_type, %Growth.Measure{age_in_decimal: nil} = measure) do
-    with {:ok, updated_child} <- Zoi.parse(Growth.Measure.schema(), measure) do
-      load_data(data_type, updated_child)
-    end
-  end
-
   def load_data(data_type, %Growth.Measure{
         child: %Growth.Child{gender: gender},
         measure_date: measure_date,
