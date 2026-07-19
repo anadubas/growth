@@ -47,7 +47,7 @@ defmodule Growth.Measure do
             %{
               measure_date: Zoi.date() |> Zoi.nullish(),
               age_in_months: Zoi.integer() |> Zoi.min(0) |> Zoi.nullish(),
-              age_in_decimal: Zoi.number() |> Zoi.min(0.0) |> Zoi.nullish(),
+              age_in_decimal: Zoi.float() |> Zoi.min(0.0) |> Zoi.nullish(),
               height: Zoi.number() |> Zoi.min(0) |> Zoi.nullish(),
               weight: Zoi.number() |> Zoi.min(0) |> Zoi.nullish(),
               head_circumference: Zoi.number() |> Zoi.min(0) |> Zoi.nullish(),
