@@ -33,7 +33,7 @@ defmodule Growth.MeasureTest do
       assert measure.head_circumference == 49.0
       assert is_float(measure.bmi)
       assert is_map(measure.results)
-      assert Map.has_key?(measure.results, :bmi)
+      assert measure.results.bmi.available?
     end
 
     test "sets BMI to nil if weight or height is missing", %{child: child} do
@@ -43,6 +43,8 @@ defmodule Growth.MeasureTest do
         Measure.new(attrs, child)
 
       assert is_nil(measure.bmi)
+      refute measure.results.bmi.available?
+      assert measure.results.height.available?
     end
   end
 end
