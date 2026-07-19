@@ -15,24 +15,28 @@ defmodule Growth.Measure do
 
   ## Fields
 
+  * `:child` - A `Growth.Child` struct representing the child measured.
   * `:measure_date` - The date when the anthropometric measurement was taken (defaults to today).
   * `:age_in_months` - Calculated age in months based on birthday and measurement date.
   * `:age_in_decimal` - Calculate age in months, with decimal precision, based on birthday and measure date.
   * `:weight` - Weight in kilograms.
   * `:height` - Height in centimeters.
   * `:head_circumference` - Head circumference in centimeters.
-  * `:bmi` - Computed BMI (or `"no measure"` if not enough data).
-  * `:child` - A `Growth.Child` struct representing the child measured.
+  * `:bmi` - Computed BMI (or `nil` if not enough data).
   * `:results` - A map containing WHO growth results (Z-scores, percentiles, SD lines).
 
   ## Example
 
-      iex> child = %Growth.Child{name: "Ana", gender: "female", birthday: ~D[2021-01-01], age_in_months: 36}
-      iex> {:ok, measure} = Growth.Measure.new(%{weight: 14.0, height: 95.0}, child)
+      iex> child = %Growth.Child{name: "Ana", gender: "female", birthday: ~D[2021-01-01]}
+      iex> {:ok, measure} = Growth.Measure.new(%{measure_date: ~D[2024-01-01], weight: 14.0, height: 95.0}, child)
+      iex> measure.age_in_months
+      35
+      iex> measure.age_in_decimal
+      35.98
       iex> measure.bmi
-      15.5
-      iex> measure.results[:weight_result][:zscore]
-      -0.2  # Example value
+      15.51246537396122
+      iex> measure.results.weight.zscore
+      0.1894881415953376
   """
 
   alias Growth.Calculate
