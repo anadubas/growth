@@ -75,7 +75,8 @@ defmodule Growth.Measure do
         measure_date: measure.measure_date,
         has_weight: not is_nil(measure.weight),
         has_height: not is_nil(measure.height),
-        has_head_circumference: not is_nil(measure.head_circumference)
+        has_head_circumference: not is_nil(measure.head_circumference),
+        has_bmi: not is_nil(measure.bmi)
       })
 
       {:ok, measure}
