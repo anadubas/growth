@@ -2,12 +2,10 @@ defmodule Growth.Child do
   @moduledoc """
   Represents a child whose growth metrics are evaluated against WHO growth standards.
 
-  This module defines the `Growth.Child` struct, which holds core demographic and temporal data
-  required for growth assessments, such as the child's name, gender, birth date, and calculated
-  age in months.
+  This module defines the `Growth.Child` struct, which holds core demographic data required
+  for growth assessments, such as the child's name, gender, and birth date.
 
-  It also includes helper functions to construct a child struct, calculate their age at the time
-  of measurement, and set the current measurement date.
+  It also includes helper functions to construct a child struct.
 
   ## Fields
 
