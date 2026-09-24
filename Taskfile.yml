@@ -103,6 +103,13 @@ tasks:
     cmds:
       - mix test {{.CLI_ARGS}}
 
+  fixture:anthro:
+    desc: "Regenerate the WHO anthro cross-validation fixture (ANTHRO_REPO overrides the reference checkout)"
+    cmds:
+      - Rscript test/fixtures/generate_anthro_golden.R
+    env:
+      ANTHRO_REPO: "{{.ANTHRO_REPO | default \"/opt/personal/anthro/_main\"}}"
+
   format:
     desc: "Format the code"
     cmds:

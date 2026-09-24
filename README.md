@@ -137,6 +137,24 @@ The application emits telemetry events to monitor user interactions and business
   - **Measurements**: `%{duration: native_time(), monotonic_time: integer()}`
   - **Metadata**: `%{age_in_months: number(), gender: String.t(), data_type: atom(), success: boolean(), reason: String.t() | nil}`
 
+## Validating the calculations
+
+The z-score calculations and the WHO reference tables shipped in `priv/indicators` are cross-validated against the WHO's own reference implementation, the [`anthro`](https://github.com/WorldHealthOrganization/anthro) R package. The test suite in `test/growth/anthro_cross_validation_test.exs` compares every fixture row against the reference twice: the LMS formula in isolation (including the WHO adjustment for values beyond ±3 SD), and the full calculation pipeline using our own tables and age derivation.
+
+The golden fixture (`test/fixtures/anthro_golden.csv`) is generated from a local checkout of the `anthro` repository. Regenerating it requires [R](https://www.r-project.org/) (not managed by `mise`), but running the tests does not — the fixture is committed and read as-is.
+
+To regenerate the fixture after updating the reference tables or the WHO checkout:
+
+```bash
+task fixture:anthro
+# or point to a different anthro checkout
+task fixture:anthro ANTHRO_REPO=/path/to/anthro
+```
+
+The validation covers children from 0 to 60 months, which is the domain of the WHO Child Growth Standards and of the reference implementation. Ages above 5 years use the WHO 2007 reference, which `anthro` does not implement, and therefore cannot be validated this way.
+
+Findings, known limitations and suggested follow-ups from the latest validation round are documented in [CALCULATION_VALIDATION.md](./CALCULATION_VALIDATION.md).
+
 ## Observability
 
 More details about the system observability can be found in the [architecture documentation](./ARCHITECTURE_O11Y.md).
