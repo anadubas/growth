@@ -25,13 +25,13 @@ defmodule Growth.CalculateTest do
       child = %Child{
         name: "Joana",
         birthday: ~D[2022-01-01],
-        gender: "female",
-        measure_date: ~D[2024-01-01],
-        age_in_months: Calculate.age_in_months(~D[2022-01-01], ~D[2024-01-01]),
-        age_in_decimal: Calculate.in_months_decimal(~D[2022-01-01], ~D[2024-01-01])
+        gender: "female"
       }
 
       measure = %Measure{
+        measure_date: ~D[2024-01-01],
+        age_in_months: Calculate.age_in_months(~D[2022-01-01], ~D[2024-01-01]),
+        age_in_decimal: Calculate.in_months_decimal(~D[2022-01-01], ~D[2024-01-01]),
         weight: 12.8,
         height: 88.7,
         head_circumference: 47.0,
@@ -39,7 +39,7 @@ defmodule Growth.CalculateTest do
         child: child
       }
 
-      result = Calculate.results(measure, child)
+      result = Calculate.results(measure)
 
       assert is_map(result.results)
       assert_in_delta result.results.bmi.zscore, 0.6038, 0.0001
@@ -56,14 +56,14 @@ defmodule Growth.CalculateTest do
         %Child{
           name: "Jane",
           birthday: birthday,
-          gender: "female",
-          measure_date: measure_date,
-          age_in_months: Calculate.age_in_months(birthday, measure_date),
-          age_in_decimal: Calculate.in_months_decimal(birthday, measure_date)
+          gender: "female"
         }
 
       measure =
         %Measure{
+          measure_date: measure_date,
+          age_in_months: Calculate.age_in_months(birthday, measure_date),
+          age_in_decimal: Calculate.in_months_decimal(birthday, measure_date),
           weight: 19.0,
           height: 112.0,
           head_circumference: 43.0,
@@ -71,7 +71,7 @@ defmodule Growth.CalculateTest do
           child: child
         }
 
-      result = Calculate.results(measure, child)
+      result = Calculate.results(measure)
 
       assert is_map(result.results)
       assert_in_delta result.results.bmi.zscore, -0.06335, 0.00001
@@ -88,16 +88,22 @@ defmodule Growth.CalculateTest do
         %Child{
           name: "Jane",
           birthday: birthday,
-          gender: "female",
-          measure_date: measure_date,
-          age_in_months: Calculate.age_in_months(birthday, measure_date),
-          age_in_decimal: Calculate.in_months_decimal(birthday, measure_date)
+          gender: "female"
         }
 
       measure =
-        %Measure{weight: 33.3, height: 141.3, head_circumference: 45.0, bmi: 16.68, child: child}
+        %Measure{
+          measure_date: measure_date,
+          age_in_months: Calculate.age_in_months(birthday, measure_date),
+          age_in_decimal: Calculate.in_months_decimal(birthday, measure_date),
+          weight: 33.3,
+          height: 141.3,
+          head_circumference: 45.0,
+          bmi: 16.68,
+          child: child
+        }
 
-      result = Calculate.results(measure, child)
+      result = Calculate.results(measure)
 
       assert is_map(result.results)
       assert_in_delta result.results.bmi.zscore, -0.08725, 0.00001
@@ -114,16 +120,22 @@ defmodule Growth.CalculateTest do
         %Child{
           name: "Jane",
           birthday: birthday,
-          gender: "female",
-          measure_date: measure_date,
-          age_in_months: Calculate.age_in_months(birthday, measure_date),
-          age_in_decimal: Calculate.in_months_decimal(birthday, measure_date)
+          gender: "female"
         }
 
       measure =
-        %Measure{weight: 57.26, height: 163.2, head_circumference: 45.0, bmi: 21.49, child: child}
+        %Measure{
+          measure_date: measure_date,
+          age_in_months: Calculate.age_in_months(birthday, measure_date),
+          age_in_decimal: Calculate.in_months_decimal(birthday, measure_date),
+          weight: 57.26,
+          height: 163.2,
+          head_circumference: 45.0,
+          bmi: 21.49,
+          child: child
+        }
 
-      result = Calculate.results(measure, child)
+      result = Calculate.results(measure)
 
       assert is_map(result.results)
       assert_in_delta result.results.bmi.zscore, 0.02034, 0.000001
@@ -136,11 +148,10 @@ defmodule Growth.CalculateTest do
   describe "calculate_result/3" do
     test "returns unavailable result when measurement is not numeric" do
       result =
-        Calculate.calculate_result("invalid", :weight, %Child{
+        Calculate.calculate_result(:weight, %Measure{
+          weight: "invalid",
           age_in_months: 24,
-          gender: "male",
-          birthday: ~D[2022-01-01],
-          name: "A"
+          child: %Child{gender: "male", birthday: ~D[2022-01-01], name: "A"}
         })
 
       refute result.available?

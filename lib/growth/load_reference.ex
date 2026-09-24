@@ -15,33 +15,33 @@ defmodule Growth.LoadReference do
   """
 
   @doc """
-  Loads a reference data row from the ETS table for a given measurement type and child.
+  Loads a reference data row from the ETS table for a given measurement type and measure data.
 
   ## Parameters
-    - `data_type`: The type of measurement, e.g., `:weight`, `:bmi`, etc.
-    - `child`: The child struct, which must have at least `:gender` and `:age_in_months`.
+
+  * `data_type`: The type of measurement, e.g., `:weight`, `:bmi`, etc.
+  * `measure`: The measure struct, which must have at least child gender and age in months.
 
   ## Returns
-    - `{:ok, reference_data}` if the data is found in the ETS table.
-    - `{:error, reason}` if the data is invalid or not found.
-    - `{:error, [Zoi.Error.t()]} if the child data was not valid.
-  """
-  @spec load_data(atom(), Growth.Child.t()) ::
-          {:ok, map()} | {:error, String.t()} | {:error, [Zoi.Error.t()]}
-  def load_data(data_type, %Growth.Child{gender: _gender, age_in_decimal: nil} = child) do
-    with {:ok, updated_child} <- Zoi.parse(Growth.Child.schema(), child) do
-      load_data(data_type, updated_child)
-    end
-  end
 
-  def load_data(data_type, %Growth.Child{gender: gender, age_in_months: age_in_months} = child) do
+  * `{:ok, reference_data}` if the data is found in the ETS table.
+  * `{:error, reason}` if the data is invalid or not found.
+  * `{:error, [Zoi.Error.t()]} if the child data was not valid.
+  """
+  @spec load_data(atom(), Growth.Measure.t()) ::
+          {:ok, map()} | {:error, String.t()} | {:error, [Zoi.Error.t()]}
+  def load_data(data_type, %Growth.Measure{
+        child: %Growth.Child{gender: gender},
+        measure_date: measure_date,
+        age_in_months: age_in_months
+      }) do
     :telemetry.span(
       [:growth, :reference_data, :load],
       %{
         age_in_months: age_in_months,
         gender: gender,
         data_type: data_type,
-        measure_date: child.measure_date
+        measure_date: measure_date
       },
       fn ->
         case get_reference(data_type, gender, age_in_months) do
@@ -51,7 +51,7 @@ defmodule Growth.LoadReference do
                age_in_months: age_in_months,
                gender: gender,
                data_type: data_type,
-               measure_date: child.measure_date,
+               measure_date: measure_date,
                success: true
              }}
 
@@ -61,7 +61,7 @@ defmodule Growth.LoadReference do
                age_in_months: age_in_months,
                child_gender: gender,
                data_type: data_type,
-               measure_date: child.measure_date,
+               measure_date: measure_date,
                success: false,
                reason: reason
              }}

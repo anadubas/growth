@@ -18,6 +18,7 @@ defmodule Growth.MeasureTest do
 
     test "creates a Measure struct with BMI and results", %{child: child} do
       attrs = %{
+        measure_date: ~D[2025-01-01],
         weight: 16.0,
         height: 100.0,
         head_circumference: 49.0
@@ -25,12 +26,14 @@ defmodule Growth.MeasureTest do
 
       {:ok, measure} = Measure.new(attrs, child)
 
+      assert measure.age_in_months == 60
+      assert measure.age_in_decimal == 60.02
       assert measure.weight == 16.0
       assert measure.height == 100.0
       assert measure.head_circumference == 49.0
       assert is_float(measure.bmi)
       assert is_map(measure.results)
-      assert Map.has_key?(measure.results, :bmi)
+      assert measure.results.bmi.available?
     end
 
     test "sets BMI to nil if weight or height is missing", %{child: child} do
@@ -40,6 +43,8 @@ defmodule Growth.MeasureTest do
         Measure.new(attrs, child)
 
       assert is_nil(measure.bmi)
+      refute measure.results.bmi.available?
+      assert measure.results.height.available?
     end
   end
 end
