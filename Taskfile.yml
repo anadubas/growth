@@ -15,7 +15,7 @@ tasks:
   build:assets:
     desc: "Build assets"
     cmds:
-      - mix assets.build
+      - mix do assets.setup + assets.build
 
   build:
     desc: "Build the application and assets"
