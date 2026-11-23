@@ -35,12 +35,12 @@ defmodule Growth.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:bandit, "~> 1.12.0"},
+      {:bandit, "~> 1.15.0"},
       {:credo, "~> 1.7.10"},
       {:dns_cluster, "~> 0.3.0"},
       {:dialyxir, "~> 1.4.5", only: [:test, :dev], runtime: false},
       {:esbuild, "~> 0.10.0", runtime: Mix.env() == :dev},
-      {:finch, "~> 0.23.0"},
+      {:finch, "~> 0.25.0"},
       {:gettext, "~> 1.0.0"},
       {:heroicons,
        github: "tailwindlabs/heroicons",
@@ -60,16 +60,16 @@ defmodule Growth.MixProject do
       {:opentelemetry_phoenix, "~> 2.0.0"},
       {:opentelemetry_telemetry, "~> 1.1.0"},
       {:phoenix, "~> 1.8.0"},
-      {:phoenix_html, "~> 4.3.0"},
+      {:phoenix_html, "~> 4.4.0"},
       {:phoenix_live_dashboard, "~> 0.9.0"},
       {:phoenix_live_reload, "~> 1.7.0", only: :dev},
       {:phoenix_live_view, "~> 1.2.0", override: true},
       {:prom_ex, "~> 1.12.0"},
-      {:swoosh, "~> 1.28.0"},
+      {:swoosh, "~> 1.30.0"},
       {:tailwind, "~> 0.5.0", runtime: Mix.env() == :dev},
       {:telemetry_metrics, "~> 1.2.0"},
       {:telemetry_poller, "~> 1.3.0"},
-      {:zoi, "~> 0.18.0"}
+      {:zoi, "~> 0.20.0"}
     ]
   end
 
