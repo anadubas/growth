@@ -13,9 +13,9 @@ However, in between visits, we can take the same measurements and understand how
 
 The application uses:
 
-* [`erlang`](https://www.erlang.org/) on version 29.0.3
-* [`elixir`](https://elixir-lang.org/) on version 1.20.2
-* [`node`](https://nodejs.org/en) on version 26.5.0
+* [`erlang`](https://www.erlang.org/) on version 29.1.2
+* [`elixir`](https://elixir-lang.org/) on version 1.20.5
+* [`node`](https://nodejs.org/en) on version 26.13.1
 
 > [!NOTE]
 > `node` is used to fetch needed dependencies for our `assets`
