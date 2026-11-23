@@ -10,9 +10,9 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "daisyui": "^5.7.47"
+    "daisyui": "^5.8.1"
   },
   "dependencies": {
-    "chart.js": "^4.5.1"
+    "chart.js": "^4.6.1"
   }
 }
