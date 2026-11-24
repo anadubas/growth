@@ -10,6 +10,15 @@ defmodule Growth do
   alias Growth.Child
   alias Growth.Measure
 
+  # Maximum number of measures a child can have.
+  @max_measures 12
+
+  @doc """
+  Returns the maximum number of measures accepted per child.
+  """
+  @spec max_measures() :: pos_integer()
+  def max_measures, do: @max_measures
+
   @doc """
   Create a child
   """
