@@ -46,5 +46,23 @@ defmodule Growth.MeasureTest do
       refute measure.results.bmi.available?
       assert measure.results.height.available?
     end
+
+    test "rejects a measure_date in the future", %{child: child} do
+      attrs = %{measure_date: Date.utc_today() |> Date.add(1), weight: 16.0}
+
+      assert {:error, [%Zoi.Error{path: [:measure_date], message: message}]} =
+               Measure.new(attrs, child)
+
+      assert message =~ "futuro"
+    end
+
+    test "rejects a measure_date before the child birthday", %{child: child} do
+      attrs = %{measure_date: ~D[2019-12-31], weight: 16.0}
+
+      assert {:error, [%Zoi.Error{path: [:measure_date], message: message}]} =
+               Measure.new(attrs, child)
+
+      assert message =~ "nascimento"
+    end
   end
 end

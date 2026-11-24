@@ -68,6 +68,7 @@ defmodule Growth.Measure do
   @spec new(map(), Child.t()) :: {:ok, t()} | {:error, [Zoi.Error.t()]}
   def new(%{} = attrs, %Child{} = child) do
     with {:ok, measure} <- Zoi.parse(schema(), Map.put(attrs, :child, child)),
+         :ok <- validate_measure_date(measure),
          {:ok, measure} <- add_results(measure) do
       :telemetry.execute([:growth, :measure, :submitted], %{count: 1}, %{
         age_in_months: measure.age_in_months,
@@ -80,6 +81,38 @@ defmodule Growth.Measure do
       })
 
       {:ok, measure}
+    end
+  end
+
+  # TODO: (jpd) move this to zoi validation.
+  # `measure_date` must not be in the future nor precede the child's birthday;
+  # both are derived-data guards the Zoi schema cannot express, so they live
+  # here as field errors (`path: [:measure_date]`) to surface in the form.
+  @spec validate_measure_date(t()) :: :ok | {:error, [Zoi.Error.t()]}
+  defp validate_measure_date(%__MODULE__{} = measure) do
+    cond do
+      Date.compare(measure.measure_date, Date.utc_today()) == :gt ->
+        {:error,
+         [
+           Zoi.Error.new(
+             code: :custom,
+             message: "data da medida não pode estar no futuro",
+             path: [:measure_date]
+           )
+         ]}
+
+      Date.compare(measure.measure_date, measure.child.birthday) == :lt ->
+        {:error,
+         [
+           Zoi.Error.new(
+             code: :custom,
+             message: "data da medida não pode ser anterior à data de nascimento",
+             path: [:measure_date]
+           )
+         ]}
+
+      true ->
+        :ok
     end
   end
 
