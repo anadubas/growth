@@ -89,6 +89,7 @@ defmodule Growth do
     end
   end
 
+  # TODO: (jpd) move this to zoi validation
   @spec duplicate_date_errors([{non_neg_integer(), Measure.t()}]) :: %{
           non_neg_integer() => [Zoi.Error.t()]
         }
