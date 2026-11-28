@@ -4,8 +4,6 @@ let Hooks = {};
 
 Hooks.GrowthChart = {
   mounted() {
-    console.log("GrowthChart mounted");
-    console.log(this.el.dataset.chart);
     const data = JSON.parse(this.el.dataset.chart);
 
     this.chart = new Chart(this.el.getContext("2d"), {
@@ -42,11 +40,12 @@ Hooks.GrowthChart = {
 
   updated() {
     const data = JSON.parse(this.el.dataset.chart);
+    const keys = ["child", "sd3neg", "sd2neg", "sd1neg", "sd0", "sd1", "sd2", "sd3"];
+
     this.chart.data.labels = data.labels;
-    this.chart.data.datasets[0].data = data.child;
-    this.chart.data.datasets[1].data = data.p50;
-    this.chart.data.datasets[2].data = data.p2;
-    this.chart.data.datasets[3].data = data.p98;
+    keys.forEach((key, index) => {
+      this.chart.data.datasets[index].data = data[key];
+    });
     this.chart.update();
   }
 };
