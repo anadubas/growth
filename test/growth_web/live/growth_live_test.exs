@@ -1,6 +1,9 @@
 defmodule GrowthWeb.GrowthLiveTest do
   use GrowthWeb.LiveCase, async: false
 
+  # TODO: (jpd) rethink the organization of tests. The use of `handle_event` and other LiveView callbacks seems strange.
+  #             One possibility is to group the tests by step: `child_info`, `measure_info`, `result`.
+
   describe "mount" do
     test "renders child form with empty fields and correct event wiring on initial load", %{
       conn: conn
@@ -42,27 +45,6 @@ defmodule GrowthWeb.GrowthLiveTest do
       assert has_element?(view, ~s|#child-form input[name="child[name]"][value="Jane Doe"]|)
       expected_birthday = birthday_months_ago(24)
       assert html =~ ~s|value="#{expected_birthday}"|
-    end
-  end
-
-  describe "validate_measure" do
-    test "re-renders form with submitted values without advancing to results step", %{
-      conn: conn
-    } do
-      {:ok, view, _html} = live(conn, ~p"/")
-      advance_to_measure_step(view)
-
-      html =
-        view
-        |> form("#measure-form", measure: valid_measure_attrs())
-        |> render_change()
-
-      assert has_element?(view, "#measure-form")
-      refute has_element?(view, "#chart-height")
-
-      assert html =~ ~s|value="80.3"|
-      assert html =~ ~s|value="12.2"|
-      assert html =~ ~s|value="45"|
     end
   end
 
@@ -113,6 +95,117 @@ defmodule GrowthWeb.GrowthLiveTest do
     end
   end
 
+  describe "measure rows" do
+    test "measure step starts with a single row seeded with today's date", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+      advance_to_measure_step(view)
+
+      today = Date.utc_today() |> Date.to_iso8601()
+
+      assert has_element?(
+               view,
+               ~s|#measure-form[phx-change="validate_measure"][phx-submit="save_measure"]|
+             )
+
+      assert has_element?(
+               view,
+               ~s|input[name="measure[0][measure_date]"][type="date"][value="#{today}"]|
+             )
+
+      assert has_element?(view, ~s|input[name="measure[0][height]"]|)
+      refute has_element?(view, ~s|input[name="measure[1][height]"]|)
+    end
+
+    test "_add_measure appends a blank row keeping existing values", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+      advance_to_measure_step(view)
+
+      html =
+        render_hook(view, "validate_measure", %{
+          "measure" => %{"0" => valid_measure_attrs()},
+          "_add_measure" => "1"
+        })
+
+      assert has_element?(view, ~s|input[name="measure[0][height]"][value="80.3"]|)
+      assert has_element?(view, ~s|input[name="measure[1][measure_date]"]|)
+      assert has_element?(view, ~s|input[name="measure[1][height]"]|)
+      refute has_element?(view, ~s|input[name="measure[2][height]"]|)
+
+      today = Date.utc_today() |> Date.to_iso8601()
+      assert html =~ ~s|name="measure[1][measure_date]" value="#{today}"|
+    end
+
+    test "_add_measure is capped at 12 rows", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+      advance_to_measure_step(view)
+
+      rows =
+        Map.new(0..11, fn index ->
+          {to_string(index),
+           valid_measure_attrs(%{"measure_date" => measure_date_ago(index + 1)})}
+        end)
+
+      render_hook(view, "validate_measure", %{
+        "measure" => rows,
+        "_add_measure" => "1"
+      })
+
+      assert has_element?(view, ~s|input[name="measure[11][height]"]|)
+      refute has_element?(view, ~s|input[name="measure[12][height]"]|)
+    end
+
+    test "_drop_measure[i] removes the row and reindexes the remaining ones", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+      advance_to_measure_step(view)
+
+      render_hook(view, "validate_measure", %{
+        "measure" => %{
+          "0" => valid_measure_attrs(%{"height" => "80.3"}),
+          "1" => valid_measure_attrs(%{"height" => "90.9"})
+        },
+        "_drop_measure" => %{"0" => "1"}
+      })
+
+      # Row 0 is dropped; the former row 1 slides into index 0 with its values.
+      assert has_element?(view, ~s|input[name="measure[0][height]"][value="90.9"]|)
+      refute has_element?(view, ~s|input[name="measure[1][height]"]|)
+    end
+
+    test "dropping the only row keeps a blank row", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+      advance_to_measure_step(view)
+
+      render_hook(view, "validate_measure", %{
+        "measure" => %{"0" => valid_measure_attrs()},
+        "_drop_measure" => %{"0" => "1"}
+      })
+
+      assert has_element?(view, ~s|input[name="measure[0][measure_date]"]|)
+      refute has_element?(view, ~s|input[name="measure[1][measure_date]"]|)
+    end
+  end
+
+  describe "validate_measure" do
+    test "re-renders form with submitted values without advancing to results step", %{
+      conn: conn
+    } do
+      {:ok, view, _html} = live(conn, ~p"/")
+      advance_to_measure_step(view)
+
+      html =
+        view
+        |> form("#measure-form", measure: %{"0" => valid_measure_attrs()})
+        |> render_change()
+
+      assert has_element?(view, "#measure-form")
+      refute has_element?(view, "#chart-height")
+
+      assert html =~ ~s|value="80.3"|
+      assert html =~ ~s|value="12.2"|
+      assert html =~ ~s|value="45"|
+    end
+  end
+
   describe "save_measure" do
     test "advances to results step with populated chart data", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/")
@@ -121,7 +214,7 @@ defmodule GrowthWeb.GrowthLiveTest do
 
       html =
         view
-        |> form("#measure-form", measure: valid_measure_attrs())
+        |> form("#measure-form", measure: %{"0" => valid_measure_attrs()})
         |> render_submit()
 
       assert has_element?(view, "#chart-height")
@@ -148,6 +241,48 @@ defmodule GrowthWeb.GrowthLiveTest do
 
       # Every indicator is available for a 2-year-old, so no note is shown.
       refute html =~ "Indisponível"
+
+      # A single measure renders no history table and no percent change.
+      refute html =~ "Histórico de medidas"
+      refute html =~ "Variação"
+    end
+
+    test "multiple measures render N chart points, a history table and percent change", %{
+      conn: conn
+    } do
+      {:ok, view, _html} = live(conn, ~p"/")
+      advance_to_measure_step(view)
+
+      render_hook(view, "validate_measure", %{
+        "measure" => %{"0" => valid_measure_attrs()},
+        "_add_measure" => "1"
+      })
+
+      html =
+        view
+        |> form("#measure-form",
+          measure: %{
+            "0" => valid_measure_attrs(),
+            "1" =>
+              valid_measure_attrs(%{
+                "measure_date" => measure_date_ago(6),
+                "height" => "75.0",
+                "weight" => "11.0"
+              })
+          }
+        )
+        |> render_submit()
+
+      assert has_element?(view, "#chart-height")
+      refute has_element?(view, "#measure-form")
+
+      for id <- ~w(chart-height chart-weight chart-bmi chart-hc) do
+        chart = decode_chart_data(view, id)
+        assert length(chart["child"]) == 2, "expected 2 points in ##{id}"
+      end
+
+      assert html =~ "Histórico de medidas"
+      assert html =~ "Variação"
     end
 
     test "stays on measure step and renders error when height is negative", %{
@@ -158,7 +293,7 @@ defmodule GrowthWeb.GrowthLiveTest do
       advance_to_measure_step(view)
 
       view
-      |> form("#measure-form", measure: invalid_measure_attrs())
+      |> form("#measure-form", measure: %{"0" => invalid_measure_attrs()})
       |> render_submit()
 
       assert has_element?(view, "#measure-form")
@@ -166,6 +301,73 @@ defmodule GrowthWeb.GrowthLiveTest do
 
       assert has_element?(view, "#measure-form p.text-error")
       assert render(view) =~ "too small: must be at least 0"
+    end
+
+    test "renders an error on the later row when measure_date is duplicated", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+      advance_to_measure_step(view)
+
+      render_hook(view, "validate_measure", %{
+        "measure" => %{"0" => valid_measure_attrs()},
+        "_add_measure" => "1"
+      })
+
+      view
+      |> form("#measure-form",
+        measure: %{
+          "0" => valid_measure_attrs(),
+          "1" => valid_measure_attrs()
+        }
+      )
+      |> render_submit()
+
+      assert has_element?(view, "#measure-form")
+      refute has_element?(view, "#chart-height")
+
+      assert has_element?(
+               view,
+               ~s{fieldset[data-measure-index="1"] p.text-error},
+               "data da medida duplicada"
+             )
+
+      refute has_element?(view, ~s{fieldset[data-measure-index="0"] p.text-error})
+    end
+
+    test "renders an error when measure_date is in the future", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+      advance_to_measure_step(view)
+
+      future = Date.utc_today() |> Date.add(10) |> Date.to_iso8601()
+
+      html =
+        view
+        |> form("#measure-form",
+          measure: %{"0" => valid_measure_attrs(%{"measure_date" => future})}
+        )
+        |> render_submit()
+
+      assert has_element?(view, "#measure-form")
+      refute has_element?(view, "#chart-height")
+      assert html =~ "data da medida não pode estar no futuro"
+    end
+
+    test "renders an error when measure_date precedes the child birthday", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/")
+      advance_to_measure_step(view)
+
+      before_birthday =
+        Date.utc_today() |> Date.add(-trunc(24 * 30.4375) - 30) |> Date.to_iso8601()
+
+      html =
+        view
+        |> form("#measure-form",
+          measure: %{"0" => valid_measure_attrs(%{"measure_date" => before_birthday})}
+        )
+        |> render_submit()
+
+      assert has_element?(view, "#measure-form")
+      refute has_element?(view, "#chart-height")
+      assert html =~ "data da medida não pode ser anterior à data de nascimento"
     end
 
     # NOTE: (jpd) these are age limits for the availability of WHO reference data
@@ -186,7 +388,7 @@ defmodule GrowthWeb.GrowthLiveTest do
 
         html =
           view
-          |> form("#measure-form", measure: valid_measure_attrs())
+          |> form("#measure-form", measure: %{"0" => valid_measure_attrs()})
           |> render_submit()
 
         # Core regression: the results step is reached without raising. The reset
@@ -231,7 +433,7 @@ defmodule GrowthWeb.GrowthLiveTest do
     advance_to_measure_step(view)
 
     view
-    |> form("#measure-form", measure: valid_measure_attrs())
+    |> form("#measure-form", measure: %{"0" => valid_measure_attrs()})
     |> render_submit()
   end
 
@@ -282,11 +484,25 @@ defmodule GrowthWeb.GrowthLiveTest do
     |> Date.to_iso8601()
   end
 
-  defp valid_measure_attrs do
-    %{"height" => "80.3", "weight" => "12.2", "head_circumference" => "45"}
+  defp measure_date_ago(months) do
+    Date.utc_today()
+    |> Date.add(-trunc(months * 30.4375 + 5))
+    |> Date.to_iso8601()
+  end
+
+  defp valid_measure_attrs(overrides \\ %{}) do
+    Map.merge(
+      %{
+        "measure_date" => Date.utc_today() |> Date.to_iso8601(),
+        "height" => "80.3",
+        "weight" => "12.2",
+        "head_circumference" => "45"
+      },
+      overrides
+    )
   end
 
   defp invalid_measure_attrs do
-    %{"height" => "-5", "weight" => "12", "head_circumference" => "45"}
+    valid_measure_attrs(%{"height" => "-5"})
   end
 end
