@@ -38,7 +38,7 @@ defmodule Growth.AnthroCrossValidationTest do
 
   use ExUnit.Case, async: true
 
-  alias Growth.{Calculate, Child, Zscore}
+  alias Growth.{Calculate, Child, Measure, Zscore}
 
   @fixture_path Path.join([__DIR__, "..", "fixtures", "anthro_golden.csv"])
   @measure_date ~D[2024-06-15]
@@ -110,8 +110,8 @@ defmodule Growth.AnthroCrossValidationTest do
 
       {failures, max_drift} =
         drift_stats(rows, @pipeline_tolerance, fn row ->
-          child = build_child(row)
-          result = Calculate.calculate_result(measure_value(row), unquote(indicator), child)
+          measure = build_measure(row)
+          result = Calculate.calculate_result(unquote(indicator), measure)
           assert result.available?, "no reference result for #{describe_row(row)}"
           result.zscore
         end)
@@ -143,16 +143,28 @@ defmodule Growth.AnthroCrossValidationTest do
   defp measure_value(%{indicator: :bmi} = row), do: Calculate.bmi(row.weight_kg, row.height_cm)
   defp measure_value(row), do: row.measure
 
-  defp build_child(%{gender: gender, age_in_days: age_in_days}) do
+  defp build_measure(%{gender: gender, age_in_days: age_in_days} = row) do
     birthday = Date.add(@measure_date, -age_in_days)
 
-    %Child{
-      name: "cross-validation",
-      gender: gender,
-      birthday: birthday,
+    value_for_measure =
+      fn
+        measure, %{indicator: measure} = row -> measure_value(row)
+        _, _ -> 0.0
+      end
+
+    %Measure{
+      child: %Child{
+        name: "cross-validation",
+        gender: gender,
+        birthday: birthday
+      },
       measure_date: @measure_date,
       age_in_months: Calculate.age_in_months(birthday, @measure_date),
-      age_in_decimal: Calculate.in_months_decimal(birthday, @measure_date)
+      age_in_decimal: Calculate.in_months_decimal(birthday, @measure_date),
+      height: value_for_measure.(:height, row),
+      weight: value_for_measure.(:weight, row),
+      head_circumference: value_for_measure.(:head_circumference, row),
+      bmi: value_for_measure.(:bmi, row)
     }
   end
 

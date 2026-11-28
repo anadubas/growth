@@ -1,84 +1,80 @@
 defmodule GrowthWeb.MeasureFormComponent do
   @moduledoc """
-  A LiveComponent that renders a DaisyUI-styled form for inputting child
-  anthropometric measurements with Zoi-based validation.
+  Renders a single measure row inside the multi-measure form.
 
-  Fields:
+  Stateless function component: add/remove/validate are handled by the parent
+  LiveView's single `<form>`. The per-row `form` already carries an indexed
+  `name` (`measure[\#{index}]`), so field names resolve to e.g.
+  `measure[0][height]`.
 
-  * Height in centimeters (number, 0.01 precision)
-  * Weight in kilograms (number, 0.001 precision)
-  * Head circumference in centimeters (number, 0.01 precision)
-
-  Validation fires on blur (via `phx-debounce`) and on submit through the
-  `validate_measure` / `save_measure` events handled by the parent LiveView.
-  Per-field errors render only after the field has been visited.
+  The remove button is a *named* `type="button"` inside the parent form that
+  dispatches a JS `change` event (`phx-click={JS.dispatch("change")}`): the drop
+  request rides along with the full current form state, avoiding any race with
+  debounced inputs and requiring no custom JavaScript.
   """
 
-  use GrowthWeb, :live_component
+  use GrowthWeb, :html
 
-  @impl true
-  def render(assigns) do
+  attr :form, :any, required: true, doc: "the per-row Phoenix.HTML.Form"
+  attr :index, :integer, required: true
+
+  def measure_row(assigns) do
     ~H"""
-    <form id="measure-form" class="card" phx-change="validate_measure" phx-submit="save_measure">
-      <fieldset class="fieldset card-body w-full max-w-lg mx-auto bg-base-300 shadow-md rounded-lg p-6">
-        <legend class="fieldset-legend card-title">Medidas:</legend>
+    <fieldset
+      data-measure-index={@index}
+      class="fieldset card-body w-full max-w-lg mx-auto bg-base-300 shadow-md rounded-lg p-6 relative"
+    >
+      <legend class="fieldset-legend card-title">Medida {@index + 1}</legend>
+      <%!-- TODO: (jpd) fix the styling of this button --%>
+      <button
+        type="button"
+        name={"_drop_measure[#{@index}]"}
+        value="1"
+        phx-click={JS.dispatch("change")}
+        class="btn btn-circle btn-xs btn-ghost absolute top-3 right-3"
+        aria-label="Remover medida"
+      >
+        <.icon name="hero-x-mark" class="h-4 w-4" />
+      </button>
+      <.measure_input field={@form[:measure_date]} label="Data" type="date" focus={true} />
+      <.measure_input field={@form[:height]} label="Altura (cm)" type="number" step="0.01" />
+      <.measure_input field={@form[:weight]} label="Peso (kg)" type="number" step="0.001" />
+      <.measure_input
+        field={@form[:head_circumference]}
+        label="C. Cabeça (cm)"
+        type="number"
+        step="0.01"
+      />
+    </fieldset>
+    """
+  end
 
-        <label class="input input-primary w-full" for={@form[:height].id}>
-          <span class="label w-1/3">Altura (cm)</span>
-          <input
-            type="number"
-            step="0.01"
-            id={@form[:height].id}
-            name={@form[:height].name}
-            value={@form[:height].value}
-            class="w-full"
-            placeholder="Altura"
-            phx-debounce="blur"
-          />
-        </label>
-        <p :for={error <- errors_for(@form[:height])} class="text-sm text-error mt-1">
-          {translate_error(error)}
-        </p>
+  attr :field, :any, required: true
+  attr :label, :string, required: true
+  attr :type, :string, default: "text"
+  attr :step, :string, default: nil
+  attr :focus, :boolean, required: false, default: false
 
-        <label class="input input-primary w-full" for={@form[:weight].id}>
-          <span class="label w-1/3">Peso (kg)</span>
-          <input
-            type="number"
-            step="0.001"
-            id={@form[:weight].id}
-            name={@form[:weight].name}
-            value={@form[:weight].value}
-            class="w-full"
-            placeholder="Peso"
-            phx-debounce="blur"
-          />
-        </label>
-        <p :for={error <- errors_for(@form[:weight])} class="text-sm text-error mt-1">
-          {translate_error(error)}
-        </p>
-
-        <label class="input input-primary w-full" for={@form[:head_circumference].id}>
-          <span class="label w-1/3"><abbr title="Circunferência">C.</abbr> Cabeça (cm)</span>
-          <input
-            type="number"
-            step="0.01"
-            id={@form[:head_circumference].id}
-            name={@form[:head_circumference].name}
-            value={@form[:head_circumference].value}
-            class="w-full"
-            placeholder="Circunferência da Cabeça"
-            phx-debounce="blur"
-          />
-        </label>
-        <p :for={error <- errors_for(@form[:head_circumference])} class="text-sm text-error mt-1">
-          {translate_error(error)}
-        </p>
-
-        <div class="card-actions justify-center">
-          <button type="submit" class="btn btn-primary">Calcular</button>
-        </div>
-      </fieldset>
-    </form>
+  defp measure_input(assigns) do
+    ~H"""
+    <div>
+      <label class="input input-primary w-full" for={@field.id}>
+        <span class="label w-1/3">{@label}</span>
+        <input
+          type={@type}
+          step={@step}
+          id={@field.id}
+          name={@field.name}
+          value={@field.value}
+          class="w-full"
+          phx-debounce="blur"
+          phx-mounted={@focus && JS.focus()}
+        />
+      </label>
+      <p :for={error <- errors_for(@field)} class="text-sm text-error mt-1">
+        {translate_error(error)}
+      </p>
+    </div>
     """
   end
 

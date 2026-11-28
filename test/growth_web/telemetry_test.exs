@@ -11,13 +11,9 @@ defmodule GrowthWeb.TelemetryTest do
 
     child_attrs = %{name: "Test", gender: "female", birthday: ~D[2023-01-01]}
 
-    assert {:ok, %Child{age_in_months: age_in_months, measure_date: measure_date}} =
-             Child.new(child_attrs)
+    assert {:ok, %Child{}} = Child.new(child_attrs)
 
-    assert_received(
-      {[:growth, :child, :created], ^ref, %{count: 1},
-       %{age_in_months: ^age_in_months, gender: "female", measure_date: ^measure_date}}
-    )
+    assert_received({[:growth, :child, :created], ^ref, %{count: 1}, %{gender: "female"}})
   end
 
   test "emits span events for successful calculation" do
@@ -30,14 +26,21 @@ defmodule GrowthWeb.TelemetryTest do
     child = %Child{
       name: "Test",
       birthday: ~D[2023-01-01],
-      measure_date: ~D[2024-10-01],
-      gender: "female",
-      age_in_months: 20
+      gender: "female"
     }
 
-    measure = %Measure{weight: 3.8, height: 52.3, bmi: 13.89, head_circumference: 35.8}
+    measure = %Measure{
+      child: child,
+      measure_date: ~D[2024-10-01],
+      age_in_months: 20,
+      age_in_decimal: 20.99,
+      weight: 3.8,
+      height: 52.3,
+      bmi: 13.89,
+      head_circumference: 35.8
+    }
 
-    Calculate.results(measure, child)
+    Calculate.results(measure)
 
     assert_received(
       {[:growth, :calculation, :start], ^ref, %{monotonic_time: _},
@@ -71,14 +74,21 @@ defmodule GrowthWeb.TelemetryTest do
     child = %Child{
       name: "Test",
       birthday: ~D[2023-01-01],
-      measure_date: ~D[2024-10-01],
-      gender: "female",
-      age_in_months: 20
+      gender: "female"
     }
 
-    measure = %Measure{weight: 3.8, height: 52.3, bmi: 13.89, head_circumference: 35.8}
+    measure = %Measure{
+      child: child,
+      measure_date: ~D[2024-10-01],
+      age_in_months: 20,
+      age_in_decimal: 20.99,
+      weight: 3.8,
+      height: 52.3,
+      bmi: 13.89,
+      head_circumference: 35.8
+    }
 
-    Calculate.results(measure, child)
+    Calculate.results(measure)
 
     for data_type <- [:weight, :height, :bmi, :head_circumference] do
       assert_received(
@@ -135,16 +145,21 @@ defmodule GrowthWeb.TelemetryTest do
     child = %Child{
       name: "Test",
       birthday: ~D[2023-01-01],
+      gender: "female"
+    }
+
+    measure = %Measure{
+      child: child,
       measure_date: ~D[2024-10-01],
-      gender: "female",
-      age_in_months: 20
+      age_in_months: 20,
+      age_in_decimal: 20.99
     }
 
     for data_type <- [:weight, :height, :bmi, :head_circumference] do
       LoadReferenceChart.load_data(
         data_type,
         child.gender,
-        child.age_in_months
+        measure.age_in_months
       )
 
       assert_received(
