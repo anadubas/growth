@@ -4,18 +4,37 @@
   <% end %>
 
   <%= if @step == :measure_info do %>
-    <.live_component
-      module={GrowthWeb.MeasureFormComponent}
-      id="measure_form"
-      form={@measure_form}
-    />
+    <form id="measure-form" phx-change="validate_measure" phx-submit="save_measure">
+      <div class="flex flex-col gap-4">
+        <.measure_row
+          :for={{form, index} <- Enum.with_index(@measures_forms)}
+          form={form}
+          index={index}
+        />
+      </div>
+
+      <div class="mt-4 flex items-center justify-center gap-4">
+        <button
+          :if={length(@measures_forms) < Growth.max_measures()}
+          type="button"
+          name="_add_measure"
+          value="1"
+          phx-click={JS.dispatch("change")}
+          class="btn btn-outline btn-primary"
+        >
+          <.icon name="hero-plus-circle" class="h-5 w-5" /> Adicionar medida
+        </button>
+
+        <button type="submit" class="btn btn-primary">Calcular</button>
+      </div>
+    </form>
   <% end %>
 
   <%= if @step == :results do %>
     <.live_component
       module={GrowthWeb.ResultsComponent}
       id="results"
-      measure={@measure}
+      measures={@measures}
       child={@child}
       charts={@charts}
     />
